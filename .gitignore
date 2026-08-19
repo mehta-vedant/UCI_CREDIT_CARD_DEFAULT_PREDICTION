@@ -226,7 +226,7 @@ saved_model/
 catboost_info/
 
 # 📊 LightGBM
-*.txt
+lightgbm*.txt
 
 # =================================
 # 🌐 WEB & DEPLOYMENT
@@ -242,6 +242,8 @@ catboost_info/
 
 # 📦 Node.js (if using for frontend)
 node_modules/
+.next/
+.vercel/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

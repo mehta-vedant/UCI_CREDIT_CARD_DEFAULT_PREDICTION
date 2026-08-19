@@ -14,9 +14,7 @@ from src.logger import logging
 import os
 
 class CreditCardFeatureEngineer(BaseEstimator, TransformerMixin):
-    """
-    Custom transformer for credit card feature engineering
-    """
+   
     def __init__(self):
         pass
     
@@ -26,25 +24,18 @@ class CreditCardFeatureEngineer(BaseEstimator, TransformerMixin):
     def transform(self, X):
         X_copy = X.copy()
         
-        # 1. Data Cleaning - Fix invalid categorical codes (MUST be done first)
         if 'EDUCATION' in X_copy.columns:
-            # EDUCATION: 0, 5, 6 are invalid codes -> map to 4 (Others)
-            # Valid codes: 1=Graduate, 2=University, 3=High School, 4=Others
             X_copy['EDUCATION'] = X_copy['EDUCATION'].replace({0: 4, 5: 4, 6: 4})
             
         if 'MARRIAGE' in X_copy.columns:
-            # MARRIAGE: 0 is invalid code -> map to 3 (Others)  
-            # Valid codes: 1=Married, 2=Single, 3=Others
             X_copy['MARRIAGE'] = X_copy['MARRIAGE'].replace({0: 3})
         
-        # 2. Credit Utilization Features
         X_copy['credit_utilization'] = np.where(
             X_copy['LIMIT_BAL'] > 0,
             X_copy['BILL_AMT1'] / X_copy['LIMIT_BAL'],
             0
         )
         
-        # 3. Payment Ratio Features (for last 6 months)
         for i in range(1, 7):
             bill_col = f'BILL_AMT{i}'
             pay_col = f'PAY_AMT{i}'
@@ -54,36 +45,34 @@ class CreditCardFeatureEngineer(BaseEstimator, TransformerMixin):
                 0
             )
         
-        # 4. Payment behavior analysis (using correct column names)
         pay_cols = ['PAY_0', 'PAY_2', 'PAY_3', 'PAY_4', 'PAY_5', 'PAY_6']
         available_pay_cols = [col for col in pay_cols if col in X_copy.columns]
         
         if available_pay_cols:
-            # Convert to numeric for calculations, then we'll keep originals as categorical
             pay_values = X_copy[available_pay_cols].astype(float)
             X_copy['avg_payment_status'] = pay_values.mean(axis=1)
             X_copy['max_payment_delay'] = pay_values.max(axis=1)
             X_copy['consecutive_delays'] = (pay_values > 0).sum(axis=1)
-            # Count how many months had delays
             X_copy['months_with_delays'] = (pay_values > 0).sum(axis=1)
-            # Check if ever paid early
             X_copy['ever_paid_early'] = (pay_values < 0).any(axis=1).astype(int)
         
-        # 5. Bill amount trends
         bill_cols = [f'BILL_AMT{i}' for i in range(1, 7)]
         X_copy['avg_bill_amount'] = X_copy[bill_cols].mean(axis=1)
-        X_copy['bill_amount_trend'] = X_copy['BILL_AMT1'] - X_copy['BILL_AMT6']
         
-        # 6. Payment amount trends  
+        
+        def calculate_trend(row_values):
+            try:
+                return np.polyfit(range(len(row_values)), row_values, 1)[0]
+            except:
+                return 0  
+        
+        X_copy['bill_amount_trend'] = X_copy[bill_cols].apply(lambda x: calculate_trend(x), axis=1)
+        
         payment_cols = [f'PAY_AMT{i}' for i in range(1, 7)]
         X_copy['avg_payment_amount'] = X_copy[payment_cols].mean(axis=1)
-        X_copy['payment_amount_trend'] = X_copy['PAY_AMT1'] - X_copy['PAY_AMT6']
+        X_copy['payment_amount_trend'] = X_copy[payment_cols].apply(lambda x: calculate_trend(x), axis=1)
         
-        # 7. High risk indicators
         X_copy['high_utilization'] = (X_copy['credit_utilization'] > 0.8).astype(int)
-        # Create payment reliability score (lower is better)
-        if available_pay_cols:
-            X_copy['payment_reliability_score'] = pay_values.mean(axis=1)  # Average delay
         
         return X_copy
 
@@ -101,29 +90,25 @@ class DataTransformation:
         
         '''
         try:
-            # Define numerical columns for UCI Credit Card dataset (including ordinal PAY variables)
             numerical_columns = [
                 'LIMIT_BAL', 'AGE',
                 'BILL_AMT1', 'BILL_AMT2', 'BILL_AMT3', 'BILL_AMT4', 'BILL_AMT5', 'BILL_AMT6',
                 'PAY_AMT1', 'PAY_AMT2', 'PAY_AMT3', 'PAY_AMT4', 'PAY_AMT5', 'PAY_AMT6',
-                'PAY_0', 'PAY_2', 'PAY_3', 'PAY_4', 'PAY_5', 'PAY_6'  # Ordinal: payment delay in months
+                'PAY_0', 'PAY_2', 'PAY_3', 'PAY_4', 'PAY_5', 'PAY_6' 
             ]
             
-            # Define categorical columns for UCI Credit Card dataset (only truly categorical variables)
             categorical_columns = [
-                'SEX', 'EDUCATION', 'MARRIAGE'  # Only demographic categories, not ordinal payment status
+                'SEX', 'EDUCATION', 'MARRIAGE'  
             ]
             
-            # Engineered features (will be created by feature engineering step)
             engineered_numerical_columns = [
                 'credit_utilization', 'avg_payment_status', 'max_payment_delay',
                 'avg_bill_amount', 'bill_amount_trend', 'avg_payment_amount', 
-                'payment_amount_trend', 'months_with_delays', 'payment_reliability_score'
+                'payment_amount_trend', 'months_with_delays'
             ] + [f'payment_ratio_{i}' for i in range(1, 7)]
             
             engineered_categorical_columns = ['high_utilization', 'ever_paid_early']
 
-            # Create numerical pipeline
             num_pipeline = Pipeline(
                 steps=[
                     ("imputer", SimpleImputer(strategy="median")),
@@ -131,7 +116,6 @@ class DataTransformation:
                 ]
             )
 
-            # Create categorical pipeline
             cat_pipeline = Pipeline(
                 steps=[
                     ("imputer", SimpleImputer(strategy="most_frequent")),
@@ -140,7 +124,6 @@ class DataTransformation:
                 ]
             )
             
-            # All numerical columns (original + engineered)
             all_numerical_columns = numerical_columns + engineered_numerical_columns
             all_categorical_columns = categorical_columns + engineered_categorical_columns
 
@@ -149,7 +132,6 @@ class DataTransformation:
             logging.info(f"Engineered numerical columns: {engineered_numerical_columns}")
             logging.info(f"Engineered categorical columns: {engineered_categorical_columns}")
 
-            # Create the preprocessor with feature engineering
             preprocessor = Pipeline(
                 steps=[
                     ("feature_engineer", CreditCardFeatureEngineer()),
