@@ -1,0 +1,1577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part 3: Feature Engineering - UCI Credit Card Default Prediction</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0f0f1a; color: #e0e0e0; line-height: 1.7; }
+
+        .hero {
+            background: linear-gradient(135deg, #7c4dff 0%, #4a148c 100%);
+            padding: 60px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            animation: heroGrid 20s linear infinite;
+        }
+        @keyframes heroGrid { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .hero h1 { font-size: 2.6em; color: #fff; position: relative; z-index: 1; text-shadow: 0 2px 20px rgba(0,0,0,0.3); }
+        .hero .subtitle { color: rgba(255,255,255,0.85); font-size: 1.2em; margin-top: 10px; position: relative; z-index: 1; }
+        .hero .part-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.4);
+            padding: 6px 18px;
+            border-radius: 30px;
+            margin-bottom: 15px;
+            font-size: 0.95em;
+            color: #fff;
+            position: relative;
+            z-index: 1;
+        }
+
+        .nav-bar {
+            background: #161625;
+            border-bottom: 1px solid #2a2a3d;
+            padding: 14px 40px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-bar a {
+            color: #9e9eb8;
+            text-decoration: none;
+            padding: 6px 16px;
+            border-radius: 8px;
+            font-size: 0.88em;
+            transition: all 0.2s;
+        }
+        .nav-bar a:hover { background: #2a2a3d; color: #ccc; }
+        .nav-bar a.active { background: linear-gradient(135deg, #7c4dff, #4a148c); color: #fff; font-weight: 600; }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 40px 30px; }
+
+        .section { margin-bottom: 55px; }
+        .section-title {
+            font-size: 1.7em;
+            color: #b388ff;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #7c4dff44;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .section-title .num {
+            background: linear-gradient(135deg, #7c4dff, #4a148c);
+            color: #fff;
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7em;
+            flex-shrink: 0;
+        }
+
+        .subsection-title {
+            font-size: 1.25em;
+            color: #ce93d8;
+            margin: 30px 0 14px 0;
+        }
+
+        p, li { color: #c8c8d8; font-size: 1em; }
+        p + p { margin-top: 12px; }
+
+        .analogy-box {
+            background: linear-gradient(135deg, #7c4dff18, #4a148c18);
+            border-left: 4px solid #7c4dff;
+            border-radius: 0 10px 10px 0;
+            padding: 18px 22px;
+            margin: 18px 0;
+        }
+        .analogy-box .label {
+            color: #b388ff;
+            font-weight: 700;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+        .analogy-box p { color: #d0c8e8; }
+
+        .info-box {
+            background: #1a1a2e;
+            border: 1px solid #2a2a3d;
+            border-radius: 10px;
+            padding: 20px 24px;
+            margin: 18px 0;
+        }
+
+        .warning-box {
+            background: #2a1a10;
+            border-left: 4px solid #ff9800;
+            border-radius: 0 10px 10px 0;
+            padding: 16px 20px;
+            margin: 18px 0;
+        }
+        .warning-box .label { color: #ff9800; font-weight: 700; margin-bottom: 4px; }
+
+        .tip-box {
+            background: #0a1a10;
+            border-left: 4px solid #4caf50;
+            border-radius: 0 10px 10px 0;
+            padding: 16px 20px;
+            margin: 18px 0;
+        }
+        .tip-box .label { color: #4caf50; font-weight: 700; margin-bottom: 4px; }
+
+        .code-block {
+            background: #12121e;
+            border: 1px solid #2a2a3d;
+            border-radius: 10px;
+            padding: 18px 22px;
+            margin: 16px 0;
+            overflow-x: auto;
+            font-size: 0.88em;
+            line-height: 1.6;
+        }
+        .code-block .file-tag {
+            background: #7c4dff33;
+            color: #b388ff;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 0.82em;
+            display: inline-block;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+        .code-block pre {
+            color: #d4d4e8;
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            white-space: pre;
+            tab-size: 4;
+        }
+        .code-block .kw { color: #c792ea; }
+        .code-block .fn { color: #82aaff; }
+        .code-block .st { color: #c3e88d; }
+        .code-block .cm { color: #546e7a; }
+        .code-block .num { color: #f78c6c; }
+        .code-block .op { color: #89ddff; }
+        .code-block .var { color: #e0e0e0; }
+        .code-block .cls { color: #ffcb6b; }
+        .code-block .dec { color: #f07178; }
+
+        .feature-card {
+            background: #1a1a2e;
+            border: 1px solid #2a2a3d;
+            border-radius: 12px;
+            padding: 22px 26px;
+            margin: 18px 0;
+            transition: border-color 0.3s;
+        }
+        .feature-card:hover { border-color: #7c4dff66; }
+        .feature-card .feature-name {
+            color: #b388ff;
+            font-size: 1.15em;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .feature-card .feature-name .icon {
+            background: #7c4dff33;
+            width: 30px; height: 30px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85em;
+        }
+        .formula-box {
+            background: #12121e;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 12px 18px;
+            margin: 10px 0;
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+            color: #82aaff;
+            font-size: 0.95em;
+            text-align: center;
+        }
+        .example-box {
+            background: #0f1a2a;
+            border: 1px dashed #4466aa;
+            border-radius: 8px;
+            padding: 14px 18px;
+            margin: 10px 0;
+        }
+        .example-box .label { color: #64b5f6; font-weight: 600; font-size: 0.85em; margin-bottom: 4px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+        table th {
+            background: #7c4dff33;
+            color: #b388ff;
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 0.9em;
+            border-bottom: 2px solid #7c4dff44;
+        }
+        table td {
+            padding: 10px 16px;
+            border-bottom: 1px solid #2a2a3d;
+            color: #c8c8d8;
+            font-size: 0.9em;
+        }
+        table tr:hover td { background: #ffffff06; }
+
+        .pipeline-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            margin: 25px 0;
+            flex-wrap: wrap;
+        }
+        .pipeline-step {
+            background: linear-gradient(135deg, #7c4dff22, #4a148c22);
+            border: 2px solid #7c4dff55;
+            border-radius: 12px;
+            padding: 16px 20px;
+            text-align: center;
+            min-width: 140px;
+        }
+        .pipeline-step .step-title {
+            color: #b388ff;
+            font-weight: 700;
+            font-size: 0.88em;
+        }
+        .pipeline-step .step-detail {
+            color: #9e9eb8;
+            font-size: 0.78em;
+            margin-top: 4px;
+        }
+        .pipeline-arrow {
+            color: #7c4dff;
+            font-size: 1.5em;
+            padding: 0 8px;
+        }
+
+        .stat-row {
+            display: flex;
+            gap: 20px;
+            margin: 18px 0;
+            flex-wrap: wrap;
+        }
+        .stat-box {
+            flex: 1;
+            min-width: 160px;
+            background: linear-gradient(135deg, #7c4dff18, #4a148c18);
+            border: 1px solid #7c4dff44;
+            border-radius: 10px;
+            padding: 18px;
+            text-align: center;
+        }
+        .stat-box .stat-value {
+            font-size: 2em;
+            font-weight: 800;
+            color: #b388ff;
+        }
+        .stat-box .stat-label {
+            color: #9e9eb8;
+            font-size: 0.85em;
+            margin-top: 4px;
+        }
+
+        .footer {
+            background: #161625;
+            border-top: 1px solid #2a2a3d;
+            padding: 30px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .footer a {
+            color: #b388ff;
+            text-decoration: none;
+            padding: 10px 22px;
+            border: 1px solid #7c4dff44;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-size: 0.95em;
+        }
+        .footer a:hover { background: #7c4dff22; border-color: #7c4dff; }
+
+        ul { padding-left: 22px; margin: 8px 0; }
+        ul li { margin-bottom: 6px; }
+        ol li { margin-bottom: 6px; }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 18px 0;
+        }
+        @media (max-width: 700px) { .comparison-grid { grid-template-columns: 1fr; } }
+        .comparison-card {
+            background: #1a1a2e;
+            border: 1px solid #2a2a3d;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .comparison-card h4 {
+            color: #b388ff;
+            margin-bottom: 10px;
+        }
+
+        .tag {
+            display: inline-block;
+            background: #7c4dff22;
+            color: #b388ff;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin: 2px 4px;
+        }
+        .tag.green { background: #4caf5022; color: #81c784; }
+        .tag.orange { background: #ff980022; color: #ffb74d; }
+        .tag.red { background: #f4433622; color: #ef9a9a; }
+    </style>
+</head>
+<body>
+
+<!-- ==================== HERO ==================== -->
+<div class="hero">
+    <div class="part-badge">Part 3 of 5</div>
+    <h1>Feature Engineering</h1>
+    <p class="subtitle">Transforming Raw Data into Predictive Power</p>
+</div>
+
+<!-- ==================== NAVIGATION ==================== -->
+<div class="nav-bar">
+    <a href="explanation_part1.html">Part 1: Overview</a>
+    <a href="explanation_part2.html">Part 2: EDA</a>
+    <a href="explanation_part3.html" class="active">Part 3: Feature Engineering</a>
+    <a href="explanation_part4.html">Part 4: Model Training</a>
+    <a href="explanation_part5.html">Part 5: Deployment</a>
+</div>
+
+<div class="container">
+
+<!-- ==================== SECTION 1: WHAT IS FEATURE ENGINEERING ==================== -->
+<div class="section">
+    <div class="section-title">
+        <span class="num">1</span> What is Feature Engineering?
+    </div>
+
+    <p>
+        <strong>Feature engineering</strong> is the process of using domain knowledge to create new input variables (features)
+        from raw data that make machine learning algorithms work better. It is widely considered the most important step
+        in the ML pipeline &mdash; because even the most sophisticated model can only be as good as the data it sees.
+    </p>
+
+    <div class="analogy-box">
+        <div class="label">Chef Analogy</div>
+        <p>
+            Think of a chef working with raw ingredients. A carrot, a potato, and an onion are <em>ingredients</em> (raw features),
+            but slicing them into the right shapes, marinating them, and combining them in the right way is what turns them into
+            a gourmet dish. Feature engineering is exactly that &mdash; it transforms raw data columns into <strong>meaningful signals</strong>
+            that a model can learn from. A model trained on raw bill amounts alone will struggle; a model trained on
+            <em>"credit utilization"</em> (bill ÷ credit limit) immediately understands spending behavior.
+        </p>
+    </div>
+
+    <p>Why does feature engineering matter so much?</p>
+    <ul>
+        <li><strong>Raw data is rarely in the right format.</strong> The UCI dataset gives us raw bill amounts and payment amounts, but
+            the <em>relationship between them</em> (the ratio) is what actually predicts default.</li>
+        <li><strong>Models need context.</strong> A bill of &yen;50,000 means nothing without knowing the credit limit. An average delay of 2
+            months tells a story that 6 individual month columns cannot easily convey.</li>
+        <li><strong>Domain knowledge creates shortcuts.</strong> Instead of forcing the model to learn that &ldquo;high bills with low
+            payments = danger,&rdquo; we hand-craft that signal directly.</li>
+    </ul>
+
+    <div class="info-box">
+        <strong>In this project:</strong> We start with <strong>24 original features</strong> and engineer <strong>17 new features</strong>,
+        bringing the total to <strong>41+ features</strong> that give the model a much richer understanding of credit risk.
+    </div>
+</div>
+
+<!-- ==================== SECTION 2: DATA CLEANING ==================== -->
+<div class="section">
+    <div class="section-title">
+        <span class="num">2</span> Data Cleaning Decisions
+    </div>
+
+    <p>
+        Before creating new features, we clean up some categorical values that contain unknown or invalid categories.
+        This is part of the <code>CreditCardFeatureEngineer</code> class &mdash; the first thing it does is fix these values.
+    </p>
+
+    <h3 class="subsection-title">EDUCATION Column Cleanup</h3>
+
+    <div class="code-block">
+        <span class="file-tag">src/components/data_transformation.py : 27-28</span>
+<pre><span class="kw">if</span> <span class="st">'EDUCATION'</span> <span class="kw">in</span> <span class="var">X_copy</span>.<span class="fn">columns</span>:
+    <span class="var">X_copy</span>[<span class="st">'EDUCATION'</span>] = <span class="var">X_copy</span>[<span class="st">'EDUCATION'</span>].<span class="fn">replace</span>({<span class="num">0</span>: <span class="num">4</span>, <span class="num">5</span>: <span class="num">4</span>, <span class="num">6</span>: <span class="num">4</span>})</pre>
+    </div>
+
+    <p>The original EDUCATION coding:</p>
+    <table>
+        <tr><th>Value</th><th>Meaning</th><th>Action</th></tr>
+        <tr><td>1</td><td>Graduate School</td><td><span class="tag green">Keep</span></td></tr>
+        <tr><td>2</td><td>University</td><td><span class="tag green">Keep</span></td></tr>
+        <tr><td>3</td><td>High School</td><td><span class="tag green">Keep</span></td></tr>
+        <tr><td>4</td><td>Others</td><td><span class="tag green">Keep</span></td></tr>
+        <tr><td>0</td><td>Unknown (data error)</td><td><span class="tag orange">&rarr; Map to 4</span></td></tr>
+        <tr><td>5</td><td>Unknown (missing label)</td><td><span class="tag orange">&rarr; Map to 4</span></td></tr>
+        <tr><td>6</td><td>Unknown (missing label)</td><td><span class="tag orange">&rarr; Map to 4</span></td></tr>
+    </table>
+
+    <p>
+        Values 0, 5, and 6 are undefined in the dataset documentation. They represent data entry errors or unknown categories.
+        Instead of dropping these rows (losing data) or leaving them as-is (confusing the model), we merge them into
+        category 4 ("Others") &mdash; a reasonable grouping that preserves the rows while removing noise.
+    </p>
+
+    <h3 class="subsection-title">MARRIAGE Column Cleanup</h3>
+
+    <div class="code-block">
+        <span class="file-tag">src/components/data_transformation.py : 30-31</span>
+<pre><span class="kw">if</span> <span class="st">'MARRIAGE'</span> <span class="kw">in</span> <span class="var">X_copy</span>.<span class="fn">columns</span>:
+    <span class="var">X_copy</span>[<span class="st">'MARRIAGE'</span>] = <span class="var">X_copy</span>[<span class="st">'MARRIAGE'</span>].<span class="fn">replace</span>({<span class="num">0</span>: <span class="num">3</span>})</pre>
+    </div>
+
+    <table>
+        <tr><th>Value</th><th>Meaning</th><th>Action</th></tr>
+        <tr><td>1</td><td>Married</td><td><span class="tag green">Keep</span></td></tr>
+        <tr><td>2</td><td>Single</td><td><span class="tag green">Keep</span></td></tr>
+        <tr><td>3</td><td>Others</td><td><span class="tag green">Keep</span></td></tr>
+        <tr><td>0</td><td>Unknown (data error)</td><td><span class="tag orange">&rarr; Map to 3</span></td></tr>
+    </table>
+
+    <div class="warning-box">
+        <div class="label">Why not drop these rows?</div>
+        <p>
+            Each row represents a real credit card customer. Dropping rows with unknown education/marriage would lose
+            valuable information from other perfectly good columns. Mapping to "Others" is the pragmatic choice.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== SECTION 3: EVERY FEATURE EXPLAINED ==================== -->
+<div class="section">
+    <div class="section-title">
+        <span class="num">3</span> Every Engineered Feature Explained
+    </div>
+
+    <p>
+        Below we walk through every single feature created by the <code>CreditCardFeatureEngineer</code> class.
+        Each one is presented with its formula, intuition, and a concrete example.
+    </p>
+
+    <!-- Feature 1: credit_utilization -->
+    <div class="feature-card">
+        <div class="feature-name"><span class="icon">#1</span> credit_utilization</div>
+
+        <div class="formula-box">
+            credit_utilization = BILL_AMT1 / LIMIT_BAL &nbsp;&nbsp;(if LIMIT_BAL &gt; 0, else 0)
+        </div>
+
+        <div class="analogy-box">
+            <div class="label">Wallet Analogy</div>
+            <p>
+                Imagine you have &yen;10,000 in your wallet (credit limit). If you've already spent &yen;8,000 (bill amount),
+                you've used 80% of your wallet. That's a high utilization &mdash; you're living on the edge.
+                Someone who's only spent &yen;1,000 (10% utilization) has much more breathing room.
+            </p>
+        </div>
+
+        <p><strong>Why it predicts default:</strong> People who max out their credit limits are under heavy financial pressure
+            and are far more likely to miss payments. This single feature is often the strongest predictor of default.</p>
+
+        <div class="example-box">
+            <div class="label">Example Calculation</div>
+            <p>BILL_AMT1 = &yen;45,000 &nbsp;&nbsp;|&nbsp;&nbsp; LIMIT_BAL = &yen;80,000</p>
+            <p style="color:#82aaff; margin-top:6px;">credit_utilization = 45,000 / 80,000 = <strong>0.5625</strong> (56.25%)</p>
+        </div>
+
+        <p><strong>Div-by-zero protection:</strong> If LIMIT_BAL is 0 (a degenerate case), the code returns 0 instead of
+            dividing by zero:</p>
+        <div class="code-block">
+<pre><span class="var">X_copy</span>[<span class="st">'credit_utilization'</span>] = <span class="var">np</span>.<span class="fn">where</span>(
+    <span class="var">X_copy</span>[<span class="st">'LIMIT_BAL'</span>] &gt; <span class="num">0</span>,
+    <span class="var">X_copy</span>[<span class="st">'BILL_AMT1'</span>] / <span class="var">X_copy</span>[<span class="st">'LIMIT_BAL'</span>],
+    <span class="num">0</span>
+)</pre>
+        </div>
+    </div>
+
+    <!-- Features 2-7: payment_ratio_1 through payment_ratio_6 -->
+    <div class="feature-card">
+        <div class="feature-name"><span class="icon">#2-7</span> payment_ratio_1 through payment_ratio_6</div>
+
+        <div class="formula-box">
+            payment_ratio_i = PAY_AMT_i / BILL_AMT_i &nbsp;&nbsp;(if BILL_AMT_i &gt; 0, else 0)
+        </div>
+
+        <div class="analogy-box">
+            <div class="label">Bill-Paying Analogy</div>
+            <p>
+                You receive a restaurant bill of &yen;1,000. If you pay &yen;900, your payment ratio is 0.9 &mdash;
+                you covered 90% of the bill. If you only pay &yen;100, the ratio is 0.1 &mdash; you're barely keeping up.
+                If your ratio consistently drops below 0.5 month after month, you're headed toward default.
+            </p>
+        </div>
+
+        <p><strong>Why it predicts default:</strong> These ratios reveal <em>payment behavior</em> over time. A person who
+            consistently pays less than what they owe is accumulating debt. The <em>pattern</em> of these ratios across
+            6 months tells a much richer story than any single month's payment.</p>
+
+        <div class="code-block">
+            <span class="file-tag">src/components/data_transformation.py : 39-46</span>
+<pre><span class="kw">for</span> <span class="var">i</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, <span class="num">7</span>):
+    <span class="var">bill_col</span> = <span class="st">f'BILL_AMT</span>{<span class="var">i</span>}<span class="st">'</span>
+    <span class="var">pay_col</span> = <span class="st">f'PAY_AMT</span>{<span class="var">i</span>}<span class="st">'</span>
+    <span class="var">X_copy</span>[<span class="st">f'payment_ratio_</span>{<span class="var">i</span>}<span class="st">'</span>] = <span class="var">np</span>.<span class="fn">where</span>(
+        <span class="var">X_copy</span>[<span class="var">bill_col</span>] &gt; <span class="num">0</span>,
+        <span class="var">X_copy</span>[<span class="var">pay_col</span>] / <span class="var">X_copy</span>[<span class="var">bill_col</span>],
+        <span class="num">0</span>
+    )</pre>
+        </div>
+
+        <div class="example-box">
+            <div class="label">Example: payment_ratio_3</div>
+            <p>PAY_AMT3 = &yen;2,000 &nbsp;&nbsp;|&nbsp;&nbsp; BILL_AMT3 = &yen;15,000</p>
+            <p style="color:#82aaff; margin-top:6px;">payment_ratio_3 = 2,000 / 15,000 = <strong>0.133</strong> (only 13.3% of bill paid!)</p>
+        </div>
+
+        <p><strong>Key insight:</strong> A ratio of 0 can mean two things: the bill was zero (fine) or the payment was zero
+            (dangerous). The conditional <code>np.where</code> handles both cases by defaulting to 0 when the bill itself is 0.</p>
+    </div>
+
+    <!-- Feature 8: avg_payment_status -->
+    <div class="feature-card">
+        <div class="feature-name"><span class="icon">#8</span> avg_payment_status</div>
+
+        <div class="formula-box">
+            avg_payment_status = mean(PAY_0, PAY_2, PAY_3, PAY_4, PAY_5, PAY_6)
+        </div>
+
+        <div class="analogy-box">
+            <div class="label">Credit Report Card Analogy</div>
+            <p>
+                Think of your payment history as a 6-month report card. Each month you get a score:
+                -1 (paid early, gold star), 0 (on time, good), 1 (one month late, warning), 2 (two months late, failing).
+                The average gives you an overall grade. An average of 0.5 means you're generally a bit late.
+                An average of -0.3 means you're usually ahead of schedule.
+            </p>
+        </div>
+
+        <p><strong>Why it predicts default:</strong> This collapses 6 months of payment status into a single number that
+            captures the <em>overall payment discipline</em>. A positive average means chronic lateness &mdash; a strong
+            default signal.</p>
+
+        <div class="example-box">
+            <div class="label">Example Calculation</div>
+            <p>PAY_0=-1, PAY_2=0, PAY_3=1, PAY_4=2, PAY_5=1, PAY_6=0</p>
+            <p style="color:#82aaff; margin-top:6px;">avg_payment_status = (-1+0+1+2+1+0) / 6 = <strong>0.50</strong></p>
+        </div>
+    </div>
+
+    <!-- Feature 9: max_payment_delay -->
+    <div class="feature-card">
+        <div class="feature-name"><span class="icon">#9</span> max_payment_delay</div>
+
+        <div class="formula-box">
+            max_payment_delay = max(PAY_0, PAY_2, PAY_3, PAY_4, PAY_5, PAY_6)
+        </div>
+
+        <div class="analogy-box">
+            <div class="label">Flood Water Analogy</div>
+            <p>
+                Imagine a river monitored for 6 months. The average water level matters, but what really determines
+                whether the dam breaks is the <em>highest</em> water level. Similarly, one extremely late payment
+                (e.g., 8 months overdue) is a massive red flag, even if other months look fine.
+            </p>
+        </div>
+
+        <p><strong>Why it predicts default:</strong> The worst delinquency often indicates the point of no return.
+            A max delay of 8 months (code 8 in the dataset) almost certainly means the customer is in serious trouble.</p>
+
+        <div class="example-box">
+            <div class="label">Example Calculation</div>
+            <p>PAY values: [-1, 0, 1, 2, 1, 0]</p>
+            <p style="color:#82aaff; margin-top:6px;">max_payment_delay = <strong>2</strong> (worst case: 2 months late)</p>
+        </div>
+    </div>
+
+    <!-- Feature 10: consecutive_delays -->
+    <div class="feature-card">
+        <div class="feature-name"><span class="icon">#10</span> consecutive_delays</div>
+
+        <div class="formula-box">
+            consecutive_delays = count(PAY_i &gt; 0 for each month)
+        </div>
+
+        <div class="analogy-box">
+            <div class="label">Tardiness Tracker Analogy</div>
+            <p>
+                Imagine tracking how many times someone was late to work out of 6 months.
+                Being late once might be a fluke. Being late 5 out of 6 months is a pattern.
+                This feature counts the number of months where the customer was delinquent
+                (PAY &gt; 0 means "payment was late by N months").
+            </p>
+        </div>
+
+        <p><strong>Why it predicts default:</strong> Frequency of delinquency matters as much as severity.
+            A person who was 1 month late six times is in a very different situation from someone who was
+            6 months late once. This captures the chronic nature of payment problems.</p>
+
+        <div class="code-block">
+            <span class="file-tag">src/components/data_transformation.py : 55-56</span>
+<pre><span class="var">X_copy</span>[<span class="st">'consecutive_delays'</span>] = (<span class="var">pay_values</span> &gt; <span class="num">0</span>).<span class="fn">sum</span>(axis=<span class="num">1</span>)
+<span class="var">X_copy</span>[<span class="st">'months_with_delays'</span>] = (<span class="var">pay_values</span> &gt; <span class="num">0</span>).<span class="fn">sum</span>(axis=<span class="num">1</span>)</pre>
+        </div>
+
+        <div class="example-box">
+            <div class="label">Example Calculation</div>
+            <p>PAY values: [-1, 0, 1, 2, 1, 0] &rarr; Which are &gt; 0? [False, False, True, True, True, False]</p>
+            <p style="color:#82aaff; margin-top:6px;">consecutive_delays = <strong>3</strong> (3 out of 6 months had delays)</p>
+        </div>
+    </div>
+
+    <!-- Feature 11: months_with_delays -->
+    <div class="feature-card">
+        <div class="feature-name"><span class="icon">#11</span> months_with_delays</div>
+
+        <div class="formula-box">
+            months_with_delays = count(PAY_i &gt; 0 for each month)
+        </div>
+
+        <p>
+            This is identical to <code>consecutive_delays</code> &mdash; both count the number of months with
+            positive payment status (indicating delays). The redundancy exists in the production code. In practice,
+            both serve the same predictive purpose and the model can use either signal.
+        </p>
+
+        <div class="tip-box">
+            <div class="label">Design Note</div>
+            <p>Having both columns named differently but carrying the same value is a minor redundancy.
+                In a production refinement, one might be renamed or removed, but both are kept for
+                compatibility with the preprocessing pipeline's column expectations.</p>
+        </div>
+    </div>
+
+    <!-- Feature 12: avg_bill_amount -->
+    <div class="feature-card">
+        <div class="feature-name"><span class="icon">#12</span> avg_bill_amount</div>
+
+        <div class="formula-box">
+            avg_bill_amount = mean(BILL_AMT1, BILL_AMT2, BILL_AMT3, BILL_AMT4, BILL_AMT5, BILL_AMT6)
+        </div>
+
+        <div class="analogy-box">
+            <div class="label">Monthly Spending Average</div>
+            <p>
+                Instead of looking at 6 separate monthly bills, this tells you the "typical" bill amount.
+                It's like asking: "On average, how much does this person owe each month?"
+                Someone with an average bill of &yen;5,000 is in a very different financial situation
+                than someone averaging &yen;50,000.
+            </p>
+        </div>
+
+        <p><strong>Why it predicts default:</strong> High average bills suggest high spending relative to income,
+            which increases default risk. This feature gives the model a single "spending level" signal rather
+            than requiring it to compare 6 individual columns.</p>
+
+        <div class="code-block">
+            <span class="file-tag">src/components/data_transformation.py : 59-60</span>
+<pre><span class="var">bill_cols</span> = [<span class="st">f'BILL_AMT</span>{<span class="var">i</span>}<span class="st">'</span> <span class="kw">for</span> <span class="var">i</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, <span class="num">7</span>)]
+<span class="var">X_copy</span>[<span class="st">'avg_bill_amount'</span>] = <span class="var">X_copy</span>[<span class="var">bill_cols</span>].<span class="fn">mean</span>(axis=<span class="num">1</span>)</pre>
+        </div>
+
+        <div class="example-box">
+            <div class="label">Example Calculation</div>
+            <p>BILL_AMT1..6 = [30000, 32000, 28000, 35000, 40000, 45000]</p>
+            <p style="color:#82aaff; margin-top:6px;">avg_bill_amount = (30000+32000+28000+35000+40000+45000) / 6 = <strong>&yen;35,000</strong></p>
+        </div>
+    </div>
+
+    <!-- Feature 13: bill_amount_trend -->
+    <div class="feature-card">
+        <div class="feature-name"><span class="icon">#13</span> bill_amount_trend</div>
+
+        <div class="formula-box">
+            bill_amount_trend = np.polyfit([0,1,2,3,4,5], [BILL_AMT1..6], 1)[0]
+            <br><small style="color:#9e9eb8;">(the slope of a linear regression fit through the 6 months of bill data)</small>
+        </div>
+
+        <div class="analogy-box">
+            <div class="label">Mountain Climbing Analogy</div>
+            <p>
+                Imagine plotting your monthly bills on a graph &mdash; month 1 on the left, month 6 on the right.
+                Now draw the best straight line through those points. If the line goes <strong>up</strong>
+                (positive slope), your bills are <em>increasing</em> &mdash; you're spending more each month.
+                If the line goes <strong>down</strong> (negative slope), your bills are shrinking &mdash;
+                you're paying down debt. A steep positive slope is a danger signal.
+            </p>
+        </div>
+
+        <p><strong>Why it predicts default:</strong> A rising bill trend suggests the customer is accumulating
+            more debt over time. A declining trend suggests they're getting their finances under control.
+            The direction and magnitude of this trend is highly predictive.</p>
+
+        <div class="code-block">
+            <span class="file-tag">src/components/data_transformation.py : 63-69</span>
+<pre><span class="kw">def</span> <span class="fn">calculate_trend</span>(<span class="var">row_values</span>):
+    <span class="kw">try</span>:
+        <span class="kw">return</span> <span class="var">np</span>.<span class="fn">polyfit</span>(<span class="fn">range</span>(<span class="fn">len</span>(<span class="var">row_values</span>)), <span class="var">row_values</span>, <span class="num">1</span>)[<span class="num">0</span>]
+    <span class="kw">except</span>:
+        <span class="kw">return</span> <span class="num">0</span>
+
+<span class="var">X_copy</span>[<span class="st">'bill_amount_trend'</span>] = <span class="var">X_copy</span>[<span class="var">bill_cols</span>].<span class="fn">apply</span>(
+    <span class="kw">lambda</span> <span class="var">x</span>: <span class="fn">calculate_trend</span>(<span class="var">x</span>), axis=<span class="num">1</span>)</pre>
+        </div>
+
+        <div class="example-box">
+            <div class="label">Example: How np.polyfit works</div>
+            <p>BILL_AMT1..6 = [20000, 25000, 30000, 35000, 40000, 45000]</p>
+            <p style="color:#9e9eb8; margin-top:6px;">Months: [0, 1, 2, 3, 4, 5]</p>
+            <p style="color:#9e9eb8;">np.polyfit finds the best-fit line: y = slope * x + intercept</p>
+            <p style="color:#82aaff; margin-top:6px;">bill_amount_trend = slope = <strong>+5000</strong> (bills increase &yen;5,000/month!)</p>
+        </div>
+
+        <p><strong>Note the try/except:</strong> If all 6 bill amounts are identical (flat line), <code>np.polyfit</code>
+            may behave unexpectedly. The function safely returns 0 in that case, meaning "no trend."</p>
+    </div>
+
+    <!-- Feature 14: avg_payment_amount -->
+    <div class="feature-card">
+        <div class="feature-name"><span class="icon">#14</span> avg_payment_amount</div>
+
+        <div class="formula-box">
+            avg_payment_amount = mean(PAY_AMT1, PAY_AMT2, PAY_AMT3, PAY_AMT4, PAY_AMT5, PAY_AMT6)
+        </div>
+
+        <div class="analogy-box">
+            <div class="label">Habit Analysis</div>
+            <p>
+                This is the "typical monthly payment" for the customer. It captures their general payment capacity.
+                Someone who averages &yen;20,000 in monthly payments is very different from someone averaging &yen;500.
+                Combined with avg_bill_amount, you can infer whether they're paying their way or drowning in debt.
+            </p>
+        </div>
+
+        <p><strong>Why it predicts default:</strong> Low average payments relative to bills (which we capture
+            separately with payment ratios) signal financial distress. This feature provides the absolute payment
+            level for the model to compare against bill amounts.</p>
+
+        <div class="code-block">
+            <span class="file-tag">src/components/data_transformation.py : 71-72</span>
+<pre><span class="var">payment_cols</span> = [<span class="st">f'PAY_AMT</span>{<span class="var">i</span>}<span class="st">'</span> <span class="kw">for</span> <span class="var">i</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, <span class="num">7</span>)]
+<span class="var">X_copy</span>[<span class="st">'avg_payment_amount'</span>] = <span class="var">X_copy</span>[<span class="var">payment_cols</span>].<span class="fn">mean</span>(axis=<span class="num">1</span>)</pre>
+        </div>
+
+        <div class="example-box">
+            <div class="label">Example Calculation</div>
+            <p>PAY_AMT1..6 = [5000, 3000, 8000, 2000, 4000, 6000]</p>
+            <p style="color:#82aaff; margin-top:6px;">avg_payment_amount = (5000+3000+8000+2000+4000+6000) / 6 = <strong>&yen;4,667</strong></p>
+        </div>
+    </div>
+
+    <!-- Feature 15: payment_amount_trend -->
+    <div class="feature-card">
+        <div class="feature-name"><span class="icon">#15</span> payment_amount_trend</div>
+
+        <div class="formula-box">
+            payment_amount_trend = np.polyfit([0,1,2,3,4,5], [PAY_AMT1..6], 1)[0]
+        </div>
+
+        <div class="analogy-box">
+            <div class="label">Spending Habit Trajectory</div>
+            <p>
+                Just like bill_amount_trend tracks whether your bills are going up or down, this tracks
+                whether your <em>payments</em> are increasing or decreasing. If bills are rising but payments
+                are falling, that's a widening gap = impending default. If both rise together, the customer
+                may be managing fine.
+            </p>
+        </div>
+
+        <p><strong>Why it predicts default:</strong> The divergence between bill trend and payment trend
+            is a powerful signal. If bills go up (+5000/month) but payments stay flat (slope ~0), the gap
+            is widening fast &mdash; a clear distress pattern.</p>
+
+        <div class="code-block">
+            <span class="file-tag">src/components/data_transformation.py : 73</span>
+<pre><span class="var">X_copy</span>[<span class="st">'payment_amount_trend'</span>] = <span class="var">X_copy</span>[<span class="var">payment_cols</span>].<span class="fn">apply</span>(
+    <span class="kw">lambda</span> <span class="var">x</span>: <span class="fn">calculate_trend</span>(<span class="var">x</span>), axis=<span class="num">1</span>)</pre>
+        </div>
+
+        <div class="example-box">
+            <div class="label">Example: Comparing Trends</div>
+            <p>bill_amount_trend = +5000 &nbsp;(bills rising fast)</p>
+            <p>payment_amount_trend = -200 &nbsp;(payments slowly decreasing)</p>
+            <p style="color:#f07178; margin-top:8px;"><strong>Warning:</strong> The gap is widening &mdash; bills grow by &yen;5,000/month while payments shrink by &yen;200/month.</p>
+        </div>
+    </div>
+
+    <!-- Feature 16: high_utilization -->
+    <div class="feature-card">
+        <div class="feature-name"><span class="icon">#16</span> high_utilization</div>
+
+        <div class="formula-box">
+            high_utilization = 1 if credit_utilization &gt; 0.8 else 0
+        </div>
+
+        <div class="analogy-box">
+            <div class="label">Traffic Light Analogy</div>
+            <p>
+                Think of this as a binary warning light. If you've used more than 80% of your credit limit,
+                the light turns <span style="color:#f44336;">RED</span> (high_utilization = 1). Below 80%, it's
+                <span style="color:#4caf50;">GREEN</span> (high_utilization = 0). This gives the model a
+                simple, crisp "danger zone" indicator.
+            </p>
+        </div>
+
+        <p><strong>Why it predicts default:</strong> Credit utilization above 80% is a well-known threshold in
+            credit risk modeling. The continuous credit_utilization feature captures the gradient, but this
+            binary feature captures the <em>hard cutoff</em> where risk spikes dramatically.</p>
+
+        <div class="code-block">
+            <span class="file-tag">src/components/data_transformation.py : 75</span>
+<pre><span class="var">X_copy</span>[<span class="st">'high_utilization'</span>] = (<span class="var">X_copy</span>[<span class="st">'credit_utilization'</span>] &gt; <span class="num">0.8</span>).<span class="fn">astype</span>(<span class="fn">int</span>)</pre>
+        </div>
+
+        <div class="example-box">
+            <div class="label">Example</div>
+            <p>credit_utilization = 0.85 &rarr; high_utilization = <strong>1</strong> (in danger zone)</p>
+            <p>credit_utilization = 0.62 &rarr; high_utilization = <strong>0</strong> (OK)</p>
+        </div>
+    </div>
+
+    <!-- Feature 17: ever_paid_early -->
+    <div class="feature-card">
+        <div class="feature-name"><span class="icon">#17</span> ever_paid_early</div>
+
+        <div class="formula-box">
+            ever_paid_early = 1 if any(PAY_i &lt; 0) else 0
+        </div>
+
+        <div class="analogy-box">
+            <div class="label">Good Student Badge</div>
+            <p>
+                In the UCI dataset, PAY values of -1 or -2 mean "paid before the due date" (early!).
+                This feature asks: "Did this customer <em>ever</em> pay early in the last 6 months?"
+                It's a badge of good financial behavior. Customers who've never paid early
+                (ever_paid_early = 0) may be less disciplined with their finances.
+            </p>
+        </div>
+
+        <p><strong>Why it predicts default:</strong> Customers who pay early demonstrate financial discipline
+            and cash flow management. This binary feature captures positive behavior &mdash; it acts as a
+            protective signal that can lower the default probability.</p>
+
+        <div class="code-block">
+            <span class="file-tag">src/components/data_transformation.py : 57</span>
+<pre><span class="var">X_copy</span>[<span class="st">'ever_paid_early'</span>] = (<span class="var">pay_values</span> &lt; <span class="num">0</span>).<span class="fn">any</span>(axis=<span class="num">1</span>).<span class="fn">astype</span>(<span class="fn">int</span>)</pre>
+        </div>
+
+        <div class="example-box">
+            <div class="label">Example</div>
+            <p>PAY values: [-1, 0, 1, 2, 1, 0] &rarr; Has any value &lt; 0? <strong>Yes</strong> (PAY_0 = -1)</p>
+            <p style="color:#81c784;">ever_paid_early = <strong>1</strong> (this customer has paid early at least once)</p>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== SECTION 4: CREDIT UTILIZATION DEEP DIVE ==================== -->
+<div class="section">
+    <div class="section-title">
+        <span class="num">4</span> Credit Utilization Deep Dive
+    </div>
+
+    <p>Credit utilization deserves special attention because it is consistently one of the <strong>top predictors</strong>
+        of credit card default across many studies and datasets.</p>
+
+    <div class="analogy-box">
+        <div class="label">The Wallet Test</div>
+        <p>
+            Imagine two people each have a &yen;100,000 credit limit. Person A has &yen;10,000 on their current bill.
+            Person B has &yen;90,000. Who is more likely to default? Person B, because they've already used 90%
+            of their available credit. They're one emergency away from being unable to pay.
+            <strong>Credit utilization is the ratio of how much you've used to how much you have.</strong>
+        </p>
+    </div>
+
+    <h3 class="subsection-title">The Two Forms</h3>
+
+    <div class="comparison-grid">
+        <div class="comparison-card">
+            <h4>Continuous: credit_utilization</h4>
+            <div class="formula-box" style="font-size:0.85em;">BILL_AMT1 / LIMIT_BAL</div>
+            <p style="margin-top:10px;">Captures the <em>exact</em> level of utilization. A value of 0.95 is worse than 0.85.
+                The model can learn the gradient of risk across all utilization levels.</p>
+        </div>
+        <div class="comparison-card">
+            <h4>Binary: high_utilization</h4>
+            <div class="formula-box" style="font-size:0.85em;">1 if utilization &gt; 0.8 else 0</div>
+            <p style="margin-top:10px;">Captures the <em>hard threshold</em>. In credit scoring, the jump in risk
+                above 80% is often nonlinear &mdash; a binary flag helps the model capture this discontinuity.</p>
+        </div>
+    </div>
+
+    <h3 class="subsection-title">Why 0.8 (80%)?</h3>
+    <p>The 80% threshold is well-established in credit risk literature:</p>
+    <ul>
+        <li>Most financial advisors recommend keeping utilization below 30% for a good credit score</li>
+        <li>Risk increases significantly above 50%</li>
+        <li>At 80%+, the probability of default spikes dramatically</li>
+        <li>The 0.8 threshold was likely validated through the EDA process in Part 2, where default rates
+            were observed to jump sharply at this level</li>
+    </ul>
+
+    <div class="tip-box">
+        <div class="label">Both Features Work Together</div>
+        <p>
+            The continuous feature lets the model learn nuanced patterns (e.g., risk doubles from 0.5 to 0.9),
+            while the binary feature provides a clean signal for the tree-based models to make
+            sharp splits at the critical threshold.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== SECTION 5: PAYMENT RATIOS EXPLAINED ==================== -->
+<div class="section">
+    <div class="section-title">
+        <span class="num">5</span> Payment Ratios Explained
+    </div>
+
+    <p>
+        The six payment ratio features (payment_ratio_1 through payment_ratio_6) are among the most informative
+        engineered features. They answer a simple question: <strong>"How much of each month's bill did the customer actually pay?"</strong>
+    </p>
+
+    <h3 class="subsection-title">The Core Formula</h3>
+
+    <div class="formula-box">
+        payment_ratio_i = PAY_AMT_i / BILL_AMT_i
+    </div>
+
+    <p>Interpreting the ratio:</p>
+    <table>
+        <tr><th>Ratio Value</th><th>Meaning</th><th>Risk Level</th></tr>
+        <tr><td>&ge; 1.0</td><td>Paid the full bill (or more, paying down old debt)</td><td><span class="tag green">Low Risk</span></td></tr>
+        <tr><td>0.7 &ndash; 0.99</td><td>Paid most of the bill</td><td><span class="tag green">Low-Medium Risk</span></td></tr>
+        <tr><td>0.3 &ndash; 0.7</td><td>Paid less than half</td><td><span class="tag orange">Medium-High Risk</span></td></tr>
+        <tr><td>0.0 &ndash; 0.3</td><td>Paid very little of the bill</td><td><span class="tag red">High Risk</span></td></tr>
+        <tr><td>0 (but bill &gt; 0)</td><td>Made no payment despite owing money</td><td><span class="tag red">Very High Risk</span></td></tr>
+    </table>
+
+    <h3 class="subsection-title">The Code</h3>
+
+    <div class="code-block">
+        <span class="file-tag">src/components/data_transformation.py : 39-46</span>
+<pre><span class="kw">for</span> <span class="var">i</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, <span class="num">7</span>):
+    <span class="var">bill_col</span> = <span class="st">f'BILL_AMT</span>{<span class="var">i</span>}<span class="st">'</span>
+    <span class="var">pay_col</span> = <span class="st">f'PAY_AMT</span>{<span class="var">i</span>}<span class="st">'</span>
+    <span class="var">X_copy</span>[<span class="st">f'payment_ratio_</span>{<span class="var">i</span>}<span class="st">'</span>] = <span class="var">np</span>.<span class="fn">where</span>(
+        <span class="var">X_copy</span>[<span class="var">bill_col</span>] &gt; <span class="num">0</span>,
+        <span class="var">X_copy</span>[<span class="var">pay_col</span>] / <span class="var">X_copy</span>[<span class="var">bill_col</span>],
+        <span class="num">0</span>
+    )</pre>
+    </div>
+
+    <h3 class="subsection-title">Example Across 6 Months</h3>
+
+    <div class="info-box">
+        <p><strong>Customer A (healthy payer):</strong></p>
+        <table>
+            <tr><th></th><th>Month 1</th><th>Month 2</th><th>Month 3</th><th>Month 4</th><th>Month 5</th><th>Month 6</th></tr>
+            <tr><td>BILL</td><td>&yen;10,000</td><td>&yen;12,000</td><td>&yen;9,000</td><td>&yen;11,000</td><td>&yen;8,000</td><td>&yen;10,000</td></tr>
+            <tr><td>PAY</td><td>&yen;10,000</td><td>&yen;11,000</td><td>&yen;9,000</td><td>&yen;11,000</td><td>&yen;8,000</td><td>&yen;10,000</td></tr>
+            <tr><td><strong>Ratio</strong></td><td style="color:#81c784;">1.00</td><td style="color:#81c784;">0.92</td><td style="color:#81c784;">1.00</td><td style="color:#81c784;">1.00</td><td style="color:#81c784;">1.00</td><td style="color:#81c784;">1.00</td></tr>
+        </table>
+        <p style="margin-top:8px;"><strong>Customer B (at-risk payer):</strong></p>
+        <table>
+            <tr><th></th><th>Month 1</th><th>Month 2</th><th>Month 3</th><th>Month 4</th><th>Month 5</th><th>Month 6</th></tr>
+            <tr><td>BILL</td><td>&yen;10,000</td><td>&yen;15,000</td><td>&yen;20,000</td><td>&yen;25,000</td><td>&yen;30,000</td><td>&yen;35,000</td></tr>
+            <tr><td>PAY</td><td>&yen;10,000</td><td>&yen;8,000</td><td>&yen;5,000</td><td>&yen;3,000</td><td>&yen;2,000</td><td>&yen;1,000</td></tr>
+            <tr><td><strong>Ratio</strong></td><td style="color:#81c784;">1.00</td><td style="color:#ffb74d;">0.53</td><td style="color:#ef9a9a;">0.25</td><td style="color:#ef9a9a;">0.12</td><td style="color:#ef9a9a;">0.07</td><td style="color:#ef9a9a;">0.03</td></tr>
+        </table>
+        <p style="margin-top:8px;">Customer B's declining ratios are a textbook default pattern &mdash; bills rising, payments shrinking.</p>
+    </div>
+
+    <h3 class="subsection-title">Edge Case: Zero Bills</h3>
+    <p>The code uses <code>np.where</code> to handle bills of zero. If BILL_AMT_i = 0, the ratio defaults to 0
+        (not undefined). This is safe because a zero bill means no debt was incurred that month &mdash;
+        the ratio is effectively meaningless, and 0 is a neutral value.</p>
+</div>
+
+<!-- ==================== SECTION 6: PAYMENT STATUS AGGREGATION ==================== -->
+<div class="section">
+    <div class="section-title">
+        <span class="num">6</span> Payment Status Aggregation
+    </div>
+
+    <p>
+        The raw dataset provides 6 separate payment status columns (PAY_0 through PAY_6). While rich in information,
+        having 6 separate columns makes it harder for models to grasp the <em>overall story</em>. The aggregation features
+        distill this story into actionable signals.
+    </p>
+
+    <h3 class="subsection-title">The Three Aggregation Features</h3>
+
+    <table>
+        <tr><th>Feature</th><th>What It Captures</th><th>Analogy</th></tr>
+        <tr>
+            <td><code>avg_payment_status</code></td>
+            <td>Overall payment discipline</td>
+            <td>Class GPA across 6 months</td>
+        </tr>
+        <tr>
+            <td><code>max_payment_delay</code></td>
+            <td>Worst delinquency episode</td>
+            <td>Lowest grade on any exam</td>
+        </tr>
+        <tr>
+            <td><code>consecutive_delays</code></td>
+            <td>Frequency of late payments</td>
+            <td>Number of times you were tardy</td>
+        </tr>
+    </table>
+
+    <h3 class="subsection-title">How They Tell Different Stories</h3>
+
+    <div class="info-box">
+        <p><strong>Scenario 1 &mdash; Consistent small delays:</strong></p>
+        <p style="color:#9e9eb8;">PAY values: [1, 1, 1, 1, 1, 1]</p>
+        <p>avg_payment_status = <strong>1.0</strong> &nbsp;|&nbsp; max_payment_delay = <strong>1</strong> &nbsp;|&nbsp; consecutive_delays = <strong>6</strong></p>
+        <p style="color:#ffb74d; margin-top:6px;"><em>Always 1 month late. Chronic problem but not catastrophic.</em></p>
+
+        <hr style="border-color:#2a2a3d; margin:16px 0;">
+
+        <p><strong>Scenario 2 &mdash; One massive delay:</strong></p>
+        <p style="color:#9e9eb8;">PAY values: [0, 0, 0, 0, 0, 8]</p>
+        <p>avg_payment_status = <strong>1.33</strong> &nbsp;|&nbsp; max_payment_delay = <strong>8</strong> &nbsp;|&nbsp; consecutive_delays = <strong>1</strong></p>
+        <p style="color:#f07178; margin-top:6px;"><em>One 8-month delinquency. Extremely dangerous despite low frequency.</em></p>
+    </div>
+
+    <p>
+        Both scenarios might have similar averages, but <code>max_payment_delay</code> immediately distinguishes them.
+        Scenario 2 is far more likely to result in default &mdash; and the model can learn this through the max feature.
+    </p>
+
+    <div class="analogy-box">
+        <div class="label">Medical Checkup Analogy</div>
+        <p>
+            Think of a doctor checking your vitals over 6 months. <code>avg_payment_status</code> is your
+            average blood pressure (general health). <code>max_payment_delay</code> is your highest spike
+            (did you have a dangerous episode?). <code>consecutive_delays</code> is how many visits showed
+            elevated readings (chronic vs. occasional). A good doctor looks at all three &mdash; and so does our model.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== SECTION 7: TREND FEATURES ==================== -->
+<div class="section">
+    <div class="section-title">
+        <span class="num">7</span> Trend Features: Catching the Direction
+    </div>
+
+    <p>
+        Most features capture a <em>snapshot</em> &mdash; what is the current state? Trend features capture
+        <em>trajectory</em> &mdash; where is the customer heading? This temporal dimension is critical for
+        predicting future defaults.
+    </p>
+
+    <h3 class="subsection-title">How np.polyfit Works</h3>
+
+    <div class="code-block">
+<pre><span class="cm"># np.polyfit(x, y, 1) fits a line y = mx + b through the data</span>
+<span class="cm"># It returns [slope, intercept]</span>
+<span class="cm"># We take [0] to get the slope</span>
+
+<span class="var">np</span>.<span class="fn">polyfit</span>(
+    [<span class="num">0</span>, <span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>],     <span class="cm"># x-values (months as indices)</span>
+    [<span class="num">20000</span>, <span class="num">25000</span>, <span class="num">30000</span>, <span class="num">35000</span>, <span class="num">40000</span>, <span class="num">45000</span>],  <span class="cm"># y-values (bill amounts)</span>
+    <span class="num">1</span>                                    <span class="cm"># degree 1 = linear fit</span>
+)  <span class="cm"># Returns: [5000.0, 20000.0]</span>
+<span class="cm">#       slope  intercept</span></pre>
+    </div>
+
+    <h3 class="subsection-title">Visual Representation</h3>
+
+    <div class="info-box" style="font-family: monospace; line-height: 1.4; padding: 20px;">
+<pre style="color: #82aaff;">
+Bill Amount                                          Increasing Trend (positive slope)
+   |                                                       /
+   |                                               ___-- /
+   |                                        ___--      /
+   |                                 ___--           /
+   |                          ___--                 /
+   |                   ___--                      / slope = +5000
+   |            ___--                            /
+   |     ___--                                  /
+   |__--                                       /
+   +--------------------------------------------------->
+   Month 1    Month 2    Month 3    Month 4    Month 5    Month 6
+
+Bill Amount                                          Decreasing Trend (negative slope)
+   |\
+   | \
+   |  \___
+   |       \___
+   |            \___
+   |                 \___
+   |                      \___  slope = -3000
+   |                          \___
+   |                              \___
+   |                                  \___
+   +--------------------------------------------------->
+   Month 1    Month 2    Month 3    Month 4    Month 5    Month 6
+</pre>
+    </div>
+
+    <h3 class="subsection-title">bill_amount_trend vs. payment_amount_trend</h3>
+
+    <div class="comparison-grid">
+        <div class="comparison-card">
+            <h4 style="color:#b388ff;">bill_amount_trend</h4>
+            <div class="formula-box" style="font-size:0.85em;">slope of BILL_AMT1..6 over time</div>
+            <p style="margin-top:10px;"><strong>Positive (+):</strong> Bills are increasing &mdash; spending is going up</p>
+            <p><strong>Negative (-):</strong> Bills are decreasing &mdash; paying down debt</p>
+            <p><strong>Zero:</strong> Bills are stable</p>
+        </div>
+        <div class="comparison-card">
+            <h4 style="color:#b388ff;">payment_amount_trend</h4>
+            <div class="formula-box" style="font-size:0.85em;">slope of PAY_AMT1..6 over time</div>
+            <p style="margin-top:10px;"><strong>Positive (+):</strong> Payments are increasing &mdash; paying more</p>
+            <p><strong>Negative (-):</strong> Payments are decreasing &mdash; paying less</p>
+            <p><strong>Zero:</strong> Payments are stable</p>
+        </div>
+    </div>
+
+    <div class="warning-box">
+        <div class="label">The Dangerous Divergence Pattern</div>
+        <p>
+            The most dangerous signal is when <code>bill_amount_trend</code> is strongly positive AND
+            <code>payment_amount_trend</code> is negative or zero. This means: bills are growing while
+            payments are shrinking or stagnant. The customer is falling further behind each month &mdash;
+            a clear trajectory toward default.
+        </p>
+    </div>
+
+    <div class="example-box">
+        <div class="label">Three Customer Profiles</div>
+        <table>
+            <tr><th>Profile</th><th>Bill Trend</th><th>Payment Trend</th><th>Interpretation</th></tr>
+            <tr>
+                <td><span class="tag green">Healthy</span></td>
+                <td>&yen;2,000</td>
+                <td>&yen;2,500</td>
+                <td>Bills rising but payments rising faster</td>
+            </tr>
+            <tr>
+                <td><span class="tag orange">Stable</span></td>
+                <td>&yen;0</td>
+                <td>&yen;0</td>
+                <td>Flat bills, flat payments &mdash; predictable</td>
+            </tr>
+            <tr>
+                <td><span class="tag red">At-Risk</span></td>
+                <td>&yen;5,000</td>
+                <td>&minus;&yen;500</td>
+                <td>Bills surging, payments declining</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== SECTION 8: PREPROCESSING PIPELINE ==================== -->
+<div class="section">
+    <div class="section-title">
+        <span class="num">8</span> Preprocessing Pipeline Explained
+    </div>
+
+    <p>
+        After feature engineering, the data passes through a <strong>preprocessing pipeline</strong> that handles
+        imputation, encoding, and scaling. This pipeline is defined in the <code>DataTransformation</code> class
+        and ensures consistent, leakage-free data preparation.
+    </p>
+
+    <h3 class="subsection-title">Pipeline Diagram</h3>
+
+    <div class="pipeline-diagram">
+        <div class="pipeline-step">
+            <div class="step-title">Raw Data</div>
+            <div class="step-detail">24 original features</div>
+        </div>
+        <div class="pipeline-arrow">&rarr;</div>
+        <div class="pipeline-step">
+            <div class="step-title">CreditCard<br>FeatureEngineer</div>
+            <div class="step-detail">Creates 17 new features<br>Cleans EDUCATION, MARRIAGE</div>
+        </div>
+        <div class="pipeline-arrow">&rarr;</div>
+        <div class="pipeline-step">
+            <div class="step-title">ColumnTransformer</div>
+            <div class="step-detail">Split into num & cat pipelines</div>
+        </div>
+        <div class="pipeline-arrow">&rarr;</div>
+        <div class="pipeline-step">
+            <div class="step-title">Num Pipeline</div>
+            <div class="step-detail">Impute(median)<br>StandardScaler</div>
+        </div>
+        <div class="pipeline-arrow">&rarr;</div>
+        <div class="pipeline-step">
+            <div class="step-title">Cat Pipeline</div>
+            <div class="step-detail">Impute(mode)<br>OneHotEncoder<br>StandardScaler</div>
+        </div>
+        <div class="pipeline-arrow">&rarr;</div>
+        <div class="pipeline-step">
+            <div class="step-title">41+ Features</div>
+            <div class="step-detail">Clean, scaled,<br>model-ready</div>
+        </div>
+    </div>
+
+    <h3 class="subsection-title">The Full Pipeline Code</h3>
+
+    <div class="code-block">
+        <span class="file-tag">src/components/data_transformation.py : 87-148</span>
+<pre><span class="kw">class</span> <span class="cls">DataTransformation</span>:
+
+    <span class="kw">def</span> <span class="fn">get_data_transformer_object</span>(<span class="var">self</span>):
+        <span class="var">numerical_columns</span> = [
+            <span class="st">'LIMIT_BAL'</span>, <span class="st">'AGE'</span>,
+            <span class="st">'BILL_AMT1'</span>, ..., <span class="st">'BILL_AMT6'</span>,
+            <span class="st">'PAY_AMT1'</span>, ..., <span class="st">'PAY_AMT6'</span>,
+            <span class="st">'PAY_0'</span>, <span class="st">'PAY_2'</span>, ..., <span class="st">'PAY_6'</span>
+        ]
+
+        <span class="var">categorical_columns</span> = [<span class="st">'SEX'</span>, <span class="st">'EDUCATION'</span>, <span class="st">'MARRIAGE'</span>]
+
+        <span class="var">engineered_numerical_columns</span> = [
+            <span class="st">'credit_utilization'</span>, <span class="st">'avg_payment_status'</span>, <span class="st">'max_payment_delay'</span>,
+            <span class="st">'avg_bill_amount'</span>, <span class="st">'bill_amount_trend'</span>, <span class="st">'avg_payment_amount'</span>,
+            <span class="st">'payment_amount_trend'</span>, <span class="st">'months_with_delays'</span>
+        ] + [<span class="st">f'payment_ratio_</span>{<span class="var">i</span>}<span class="st">'</span> <span class="kw">for</span> <span class="var">i</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, <span class="num">7</span>)]
+
+        <span class="var">engineered_categorical_columns</span> = [<span class="st">'high_utilization'</span>, <span class="st">'ever_paid_early'</span>]
+
+        <span class="cm"># Numerical pipeline: fill missing with median, then standardize</span>
+        <span class="var">num_pipeline</span> = <span class="cls">Pipeline</span>(<span class="var">steps</span>=[
+            (<span class="st">"imputer"</span>, <span class="cls">SimpleImputer</span>(<span class="var">strategy</span>=<span class="st">"median"</span>)),
+            (<span class="st">"scaler"</span>, <span class="cls">StandardScaler</span>())
+        ])
+
+        <span class="cm"># Categorical pipeline: fill missing with mode, one-hot encode, then scale</span>
+        <span class="var">cat_pipeline</span> = <span class="cls">Pipeline</span>(<span class="var">steps</span>=[
+            (<span class="st">"imputer"</span>, <span class="cls">SimpleImputer</span>(<span class="var">strategy</span>=<span class="st">"most_frequent"</span>)),
+            (<span class="st">"one_hot_encoder"</span>, <span class="cls">OneHotEncoder</span>(<span class="var">drop</span>=<span class="st">'first'</span>, <span class="var">handle_unknown</span>=<span class="st">'ignore'</span>)),
+            (<span class="st">"scaler"</span>, <span class="cls">StandardScaler</span>(<span class="var">with_mean</span>=<span class="kw">False</span>))
+        ])
+
+        <span class="cm"># Combine into a ColumnTransformer</span>
+        <span class="var">preprocessor</span> = <span class="cls">Pipeline</span>(<span class="var">steps</span>=[
+            (<span class="st">"feature_engineer"</span>, <span class="cls">CreditCardFeatureEngineer</span>()),
+            (<span class="st">"column_transformer"</span>, <span class="cls">ColumnTransformer</span>(
+                <span class="var">transformers</span>=[
+                    (<span class="st">"num_pipeline"</span>, <span class="var">num_pipeline</span>, <span class="var">all_numerical_columns</span>),
+                    (<span class="st">"cat_pipeline"</span>, <span class="var">cat_pipeline</span>, <span class="var">all_categorical_columns</span>)
+                ],
+                <span class="var">remainder</span>=<span class="st">'drop'</span>
+            ))
+        ])
+        <span class="kw">return</span> <span class="var">preprocessor</span></pre>
+    </div>
+
+    <h3 class="subsection-title">Why These Specific Choices?</h3>
+
+    <div class="feature-card" style="border-left: 3px solid #7c4dff;">
+        <div class="feature-name">SimpleImputer(strategy="median") for Numericals</div>
+        <p>
+            <strong>Why median, not mean?</strong> The median is robust to outliers. If one customer has a
+            BILL_AMT of &yen;5,000,000 (an outlier), the mean would be pulled upward, distorting the
+            imputation. The median ignores this outlier and fills missing values with the true center
+            of the distribution. In credit data, outliers are common &mdash; making median the safer choice.
+        </p>
+    </div>
+
+    <div class="feature-card" style="border-left: 3px solid #7c4dff;">
+        <div class="feature-name">StandardScaler for Numericals</div>
+        <p>
+            <strong>Why scale?</strong> Tree-based models (like XGBoost) technically don't require scaling
+            since they split on feature values regardless of scale. However, scaling helps when:
+        </p>
+        <ul>
+            <li>Regularization is applied (penalties are sensitive to feature magnitudes)</li>
+            <li>Comparing feature importances across features with different scales</li>
+            <li>The model pipeline is shared with non-tree models (like logistic regression)</li>
+        </ul>
+        <p style="margin-top:8px;">
+            StandardScaler transforms each feature to have <strong>mean=0, standard deviation=1</strong>,
+            putting all features on a comparable scale.
+        </p>
+    </div>
+
+    <div class="feature-card" style="border-left: 3px solid #7c4dff;">
+        <div class="feature-name">OneHotEncoder(drop='first')</div>
+        <p>
+            <strong>Why drop='first'?</strong> This is the <strong>dummy variable trap</strong> avoidance.
+            If EDUCATION has values [1, 2, 3, 4], one-hot encoding would create 4 binary columns.
+            But these 4 columns are perfectly correlated (if you know 3 are 0, the 4th must be 1).
+            Dropping the first category breaks this perfect multicollinearity, reducing redundancy.
+        </p>
+        <p style="margin-top:8px;">
+            <strong>handle_unknown='ignore':</strong> If the test set contains a category not seen during
+            training, it's silently encoded as all zeros rather than raising an error.
+        </p>
+    </div>
+
+    <div class="feature-card" style="border-left: 3px solid #7c4dff;">
+        <div class="feature-name">StandardScaler(with_mean=False) for Categoricals</div>
+        <p>
+            After one-hot encoding, the categorical columns are sparse binary vectors (mostly 0s and 1s).
+            <code>with_mean=False</code> means it only scales by standard deviation (divides by std),
+            without centering (substracting mean). Centering sparse binary data would destroy its
+            sparsity and create an unnecessarily dense matrix.
+        </p>
+    </div>
+
+    <div class="feature-card" style="border-left: 3px solid #7c4dff;">
+        <div class="feature-name">ColumnTransformer: Different Processing for Different Types</div>
+        <p>
+            Numerical columns need median imputation and standard scaling. Categorical columns need
+            mode imputation, one-hot encoding, and variance scaling. <code>ColumnTransformer</code>
+            applies the right pipeline to the right columns simultaneously, keeping the code clean
+            and the transformations type-appropriate.
+        </p>
+    </div>
+
+    <div class="feature-card" style="border-left: 3px solid #f44336;">
+        <div class="feature-name">Fit on Train, Transform on Test (Data Leakage Prevention)</div>
+
+        <div class="code-block">
+            <span class="file-tag">src/components/data_transformation.py : 200-201</span>
+<pre><span class="cm"># fit_transform on training data (learns statistics + applies transformation)</span>
+<span class="var">input_feature_train_arr</span> = <span class="var">preprocessing_obj</span>.<span class="fn">fit_transform</span>(<span class="var">input_feature_train_df</span>)
+
+<span class="cm"># transform ONLY on test data (uses statistics learned from training)</span>
+<span class="var">input_feature_test_arr</span> = <span class="var">preprocessing_obj</span>.<span class="fn">transform</span>(<span class="var">input_feature_test_df</span>)</pre>
+        </div>
+
+        <p>
+            <strong>This is critical.</strong> If we <code>fit</code> on the test set, the scaler would learn
+            the test set's mean and standard deviation &mdash; information the model shouldn't have access to
+            during training. This is called <strong>data leakage</strong> and it artificially inflates
+            model performance. By only calling <code>fit_transform</code> on training data and
+            <code>transform</code> on test data, we ensure the test set is a true proxy for unseen future data.
+        </p>
+
+        <div class="analogy-box">
+            <div class="label">Exam Analogy</div>
+            <p>
+                It's like a student studying for an exam. The <strong>training set</strong> is their textbook &mdash;
+                they learn the mean, median, and patterns from it. The <strong>test set</strong> is the actual exam &mdash;
+                they apply what they learned, but the exam questions are new. If the student had already seen the
+                exam answers (fit on test), their score would be meaningless.
+            </p>
+        </div>
+    </div>
+
+    <h3 class="subsection-title">remainder='drop'</h3>
+    <p>
+        The <code>ColumnTransformer</code> has <code>remainder='drop'</code>, which means any columns not
+        explicitly assigned to a pipeline are dropped. This is how the ID column and target column are
+        excluded &mdash; they're not in either the numerical or categorical column lists, so they're
+        automatically removed.
+    </p>
+</div>
+
+<!-- ==================== SECTION 9: FINAL FEATURE COUNT ==================== -->
+<div class="section">
+    <div class="section-title">
+        <span class="num">9</span> Final Feature Count
+    </div>
+
+    <p>Here's the complete picture of how our feature space transforms from raw data to model-ready input:</p>
+
+    <div class="stat-row">
+        <div class="stat-box">
+            <div class="stat-value">25</div>
+            <div class="stat-label">Original Columns</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value" style="color:#f07178;">&minus;2</div>
+            <div class="stat-label">Dropped (ID + Target)</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value" style="color:#81c784;">+17</div>
+            <div class="stat-label">Engineered Features</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value">41+</div>
+            <div class="stat-label">Final Feature Count</div>
+        </div>
+    </div>
+
+    <h3 class="subsection-title">Complete Feature Summary</h3>
+
+    <table>
+        <tr><th>#</th><th>Feature</th><th>Type</th><th>Category</th></tr>
+        <tr><td>1</td><td>LIMIT_BAL</td><td><span class="tag">Numerical</span></td><td>Original</td></tr>
+        <tr><td>2</td><td>SEX</td><td><span class="tag">Categorical</span></td><td>Original</td></tr>
+        <tr><td>3</td><td>EDUCATION</td><td><span class="tag">Categorical</span></td><td>Original (cleaned)</td></tr>
+        <tr><td>4</td><td>MARRIAGE</td><td><span class="tag">Categorical</span></td><td>Original (cleaned)</td></tr>
+        <tr><td>5</td><td>AGE</td><td><span class="tag">Numerical</span></td><td>Original</td></tr>
+        <tr><td>6-11</td><td>PAY_0 .. PAY_6 (skip PAY_1)</td><td><span class="tag">Numerical</span></td><td>Original</td></tr>
+        <tr><td>12-17</td><td>BILL_AMT1 .. BILL_AMT6</td><td><span class="tag">Numerical</span></td><td>Original</td></tr>
+        <tr><td>18-23</td><td>PAY_AMT1 .. PAY_AMT6</td><td><span class="tag">Numerical</span></td><td>Original</td></tr>
+        <tr style="background:#7c4dff11;"><td>24</td><td><strong>credit_utilization</strong></td><td><span class="tag">Numerical</span></td><td><span class="tag orange">Engineered</span></td></tr>
+        <tr style="background:#7c4dff11;"><td>25-30</td><td><strong>payment_ratio_1 .. payment_ratio_6</strong></td><td><span class="tag">Numerical</span></td><td><span class="tag orange">Engineered</span></td></tr>
+        <tr style="background:#7c4dff11;"><td>31</td><td><strong>avg_payment_status</strong></td><td><span class="tag">Numerical</span></td><td><span class="tag orange">Engineered</span></td></tr>
+        <tr style="background:#7c4dff11;"><td>32</td><td><strong>max_payment_delay</strong></td><td><span class="tag">Numerical</span></td><td><span class="tag orange">Engineered</span></td></tr>
+        <tr style="background:#7c4dff11;"><td>33</td><td><strong>consecutive_delays</strong></td><td><span class="tag">Numerical</span></td><td><span class="tag orange">Engineered</span></td></tr>
+        <tr style="background:#7c4dff11;"><td>34</td><td><strong>months_with_delays</strong></td><td><span class="tag">Numerical</span></td><td><span class="tag orange">Engineered</span></td></tr>
+        <tr style="background:#7c4dff11;"><td>35</td><td><strong>avg_bill_amount</strong></td><td><span class="tag">Numerical</span></td><td><span class="tag orange">Engineered</span></td></tr>
+        <tr style="background:#7c4dff11;"><td>36</td><td><strong>bill_amount_trend</strong></td><td><span class="tag">Numerical</span></td><td><span class="tag orange">Engineered</span></td></tr>
+        <tr style="background:#7c4dff11;"><td>37</td><td><strong>avg_payment_amount</strong></td><td><span class="tag">Numerical</span></td><td><span class="tag orange">Engineered</span></td></tr>
+        <tr style="background:#7c4dff11;"><td>38</td><td><strong>payment_amount_trend</strong></td><td><span class="tag">Numerical</span></td><td><span class="tag orange">Engineered</span></td></tr>
+        <tr style="background:#7c4dff11;"><td>39</td><td><strong>high_utilization</strong></td><td><span class="tag">Categorical</span></td><td><span class="tag orange">Engineered</span></td></tr>
+        <tr style="background:#7c4dff11;"><td>40</td><td><strong>ever_paid_early</strong></td><td><span class="tag">Categorical</span></td><td><span class="tag orange">Engineered</span></td></tr>
+    </table>
+
+    <div class="info-box">
+        <p><strong>After preprocessing:</strong> The OneHotEncoder expands the categorical features (SEX, EDUCATION, MARRIAGE, high_utilization, ever_paid_early)
+            into their binary representations (with drop='first'). This brings the final count to approximately <strong>41-43 features</strong>
+            depending on the number of unique categories in each categorical variable.</p>
+    </div>
+</div>
+
+<!-- ==================== SECTION 10: WHY THESE FEATURES ==================== -->
+<div class="section">
+    <div class="section-title">
+        <span class="num">10</span> Why These Specific Features?
+    </div>
+
+    <p>
+        Each engineered feature isn't arbitrary &mdash; it's grounded in <strong>domain knowledge</strong> about
+        credit risk and informed by the <strong>EDA findings</strong> from Part 2. Here's the justification
+        for each engineering choice:
+    </p>
+
+    <table>
+        <tr><th>Feature</th><th>Domain Justification</th><th>EDA Connection</th></tr>
+        <tr>
+            <td><code>credit_utilization</code></td>
+            <td>Credit utilization ratio is the #1 factor in FICO scores. It measures how close a borrower is to maxing out their credit.</td>
+            <td>EDA showed that higher LIMIT_BAL groups have lower default rates &mdash; utilization normalizes bill amounts relative to credit limit.</td>
+        </tr>
+        <tr>
+            <td><code>payment_ratio_*</code></td>
+            <td>Payment-to-bill ratio measures repayment capacity. Consistently low ratios indicate the borrower cannot service their debt.</td>
+            <td>EDA revealed that PAY_AMT distributions are heavily skewed, with defaulters having significantly lower payment amounts relative to bills.</td>
+        </tr>
+        <tr>
+            <td><code>avg_payment_status</code></td>
+            <td>Averaging 6 months of payment status captures overall payment discipline in a single number.</td>
+            <td>EDA showed that PAY_0, PAY_2, PAY_3 etc. all individually correlated with default &mdash; aggregating them provides a robust combined signal.</td>
+        </tr>
+        <tr>
+            <td><code>max_payment_delay</code></td>
+            <td>The worst delinquency is a strong signal of financial distress. Even one 6+ month delinquency is highly predictive.</td>
+            <td>EDA likely showed extreme PAY values (>3) are rare but almost always associated with default.</td>
+        </tr>
+        <tr>
+            <td><code>consecutive_delays</code></td>
+            <td>Frequency of delinquency indicates chronic vs. one-time issues. Chronic delinquency is a stronger predictor.</td>
+            <td>EDA showed PAY value counts were non-uniform &mdash; more delinquent months = higher default rate.</td>
+        </tr>
+        <tr>
+            <td><code>avg_bill_amount</code></td>
+            <td>Average monthly spending level provides context for the model. High spenders have different risk profiles.</td>
+            <td>EDA showed BILL_AMT distributions differ between defaulters and non-defaulters.</td>
+        </tr>
+        <tr>
+            <td><code>bill_amount_trend</code></td>
+            <td>Rising bills without rising income is unsustainable. Trend captures the trajectory toward potential default.</td>
+            <td>EDA showed that defaulters tend to have increasing bill amounts in the later months.</td>
+        </tr>
+        <tr>
+            <td><code>payment_amount_trend</code></td>
+            <td>Decreasing payments signal worsening financial health. The divergence from bill trends is especially powerful.</td>
+            <td>EDA revealed that payment amounts have high variance &mdash; the trend smooths this into a directional signal.</td>
+        </tr>
+        <tr>
+            <td><code>high_utilization</code></td>
+            <td>The 80% threshold is an industry-recognized danger zone for credit risk.</td>
+            <td>EDA likely showed a nonlinear jump in default rates above 80% utilization, justifying a binary flag.</td>
+        </tr>
+        <tr>
+            <td><code>ever_paid_early</code></td>
+            <td>Early payment is a strong positive signal of financial health and cash management.</td>
+            <td>EDA showed that PAY values &lt; 0 are associated with lower default rates &mdash; this feature captures that protective factor.</td>
+        </tr>
+        <tr>
+            <td><code>EDUCATION cleanup</code></td>
+            <td>Unknown categories (0, 5, 6) add noise without signal. Grouping them into "Others" (4) reduces spurious patterns.</td>
+            <td>EDA showed that categories 0, 5, 6 had very small sample sizes, making their individual default rates unreliable.</td>
+        </tr>
+        <tr>
+            <td><code>MARRIAGE cleanup</code></td>
+            <td>Value 0 is undocumented. Merging with "Others" (3) avoids the model learning from a data entry error.</td>
+            <td>EDA showed category 0 had negligible count &mdash; not enough to be a meaningful predictor on its own.</td>
+        </tr>
+    </table>
+
+    <div class="analogy-box">
+        <div class="label">The Big Picture</div>
+        <p>
+            Raw features tell you <em>what happened</em> (bills, payments, statuses).
+            Engineered features tell you <em>what it means</em> (utilization, trends, patterns).
+            The model doesn't need to discover the relationship between bill amount and credit limit &mdash;
+            we hand it the answer as <code>credit_utilization</code>. We don't ask it to compare 6 months
+            of payment history &mdash; we distill it into <code>avg_payment_status</code> and <code>max_payment_delay</code>.
+            <strong>Good feature engineering reduces what the model needs to learn, making it more accurate
+            with less data.</strong>
+        </p>
+    </div>
+
+    <div class="tip-box">
+        <div class="label">Key Takeaway</div>
+        <p>
+            The 17 engineered features in this project transform 24 raw columns into a rich 41+ feature set that
+            captures utilization patterns, payment behavior trends, delinquency severity and frequency, and
+            spending trajectories. This is what separates a mediocre model from a high-performing one &mdash;
+            not a fancier algorithm, but better input data.
+        </p>
+    </div>
+</div>
+
+</div> <!-- end container -->
+
+<!-- ==================== FOOTER ==================== -->
+<div class="footer">
+    <a href="explanation_part2.html">&larr; Part 2: EDA</a>
+    <span style="color:#555;">Part 3 of 5: Feature Engineering</span>
+    <a href="explanation_part4.html">Part 4: Model Training &rarr;</a>
+</div>
+
+</body>
+</html>

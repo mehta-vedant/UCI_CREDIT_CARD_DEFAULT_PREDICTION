@@ -1,52 +1,580 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Credit Card Default Prediction</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CreditGuard AI — Default Prediction System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            background-color: #f5f5f5;
-            text-align: center;
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0a0e1a;
+            --surface: #111827;
+            --surface-2: #1a2236;
+            --border: #1e293b;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.3);
+            --green: #22c55e;
+            --green-glow: rgba(34, 197, 94, 0.2);
+            --amber: #f59e0b;
+            --red: #ef4444;
+            --radius: 16px;
+            --radius-sm: 10px;
         }
 
-        .container {
-            background-color: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
         }
-        h1 {
-            color: #333;
+
+        /* ── Ambient Background ── */
+        .ambient {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .ambient::before {
+            content: '';
+            position: absolute;
+            width: 600px; height: 600px;
+            top: -200px; left: -100px;
+            background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        .ambient::after {
+            content: '';
+            position: absolute;
+            width: 500px; height: 500px;
+            bottom: -150px; right: -100px;
+            background: radial-gradient(circle, rgba(34,197,94,0.08) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        /* ── Navigation ── */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            padding: 16px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(10, 14, 26, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            text-decoration: none;
+            color: var(--text);
+        }
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--accent), #818cf8);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+        .nav-links { display: flex; gap: 8px; align-items: center; }
+        .nav-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .nav-links a:hover { color: var(--text); background: var(--surface-2); }
+        .nav-links a.active { color: var(--accent); background: rgba(99,102,241,0.1); }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #818cf8);
+            color: #fff !important;
+            padding: 10px 24px !important;
+            border-radius: 10px !important;
+            font-weight: 600 !important;
+            box-shadow: 0 4px 20px var(--accent-glow);
+            transition: all 0.3s !important;
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 30px var(--accent-glow) !important;
+            background: linear-gradient(135deg, #5558e6, #7c7ff7) !important;
+        }
+
+        /* ── Main Content ── */
+        main {
+            position: relative;
+            z-index: 1;
+            padding-top: 80px;
+        }
+
+        /* ── Hero Section ── */
+        .hero {
+            text-align: center;
+            padding: 80px 40px 60px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(99,102,241,0.1);
+            border: 1px solid rgba(99,102,241,0.2);
+            color: #a5b4fc;
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 24px;
+            letter-spacing: 0.5px;
+        }
+        .badge::before {
+            content: '';
+            width: 6px; height: 6px;
+            background: var(--green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--green);
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .hero h1 {
+            font-size: 3.2rem;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+        .hero h1 span {
+            background: linear-gradient(135deg, var(--accent), #a78bfa, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero p {
+            font-size: 1.15rem;
+            color: var(--text-dim);
+            line-height: 1.7;
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+        .hero-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+        .btn-hero {
+            padding: 14px 36px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-hero.primary {
+            background: linear-gradient(135deg, var(--accent), #818cf8);
+            color: #fff;
+            box-shadow: 0 4px 24px var(--accent-glow);
+        }
+        .btn-hero.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 40px var(--accent-glow);
+        }
+        .btn-hero.secondary {
+            background: var(--surface-2);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .btn-hero.secondary:hover {
+            border-color: var(--accent);
+            background: var(--surface);
+        }
+
+        /* ── Stats Strip ── */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            max-width: 900px;
+            margin: 0 auto 80px;
+            padding: 0 40px;
+        }
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 24px 20px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .stat-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+        .stat-value.accent { color: var(--accent); }
+        .stat-value.green { color: var(--green); }
+        .stat-value.amber { color: var(--amber); }
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Features Grid ── */
+        .features-section {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 40px 80px;
+        }
+        .section-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+        .section-header h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .section-header p {
+            color: var(--text-dim);
+            font-size: 1rem;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .feature-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px 28px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), #818cf8);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .feature-card:hover {
+            border-color: rgba(99,102,241,0.3);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+        }
+        .feature-card:hover::before { opacity: 1; }
+        .feature-icon {
+            width: 48px; height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
             margin-bottom: 20px;
         }
-        p {
-            color: #666;
-            font-size: 18px;
-            margin-bottom: 30px;
+        .feature-icon.purple { background: rgba(99,102,241,0.12); }
+        .feature-icon.green { background: rgba(34,197,94,0.12); }
+        .feature-icon.amber { background: rgba(245,158,11,0.12); }
+        .feature-icon.red { background: rgba(239,68,68,0.12); }
+        .feature-icon.blue { background: rgba(59,130,246,0.12); }
+        .feature-icon.pink { background: rgba(236,72,153,0.12); }
+        .feature-card h3 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 10px;
         }
-        .btn {
-            display: inline-block;
-            background-color: #4CAF50;
-            color: white;
-            padding: 15px 30px;
+        .feature-card p {
+            color: var(--text-dim);
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+
+        /* ── Model Info Strip ── */
+        .model-section {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 40px 80px;
+        }
+        .model-card {
+            background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(129,140,248,0.04));
+            border: 1px solid rgba(99,102,241,0.2);
+            border-radius: var(--radius);
+            padding: 40px;
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+        .model-visual {
+            flex-shrink: 0;
+            width: 120px; height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(var(--accent) 0deg 293deg, var(--border) 293deg 360deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .model-visual::after {
+            content: '';
+            width: 88px; height: 88px;
+            background: var(--bg);
+            border-radius: 50%;
+            position: absolute;
+        }
+        .model-visual span {
+            position: relative;
+            z-index: 1;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--accent);
+        }
+        .model-info { flex: 1; }
+        .model-info h3 { font-size: 1.3rem; margin-bottom: 8px; }
+        .model-info p { color: var(--text-dim); font-size: 0.9rem; line-height: 1.7; }
+        .model-tags { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+        .tag {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 5px 14px;
+            border-radius: 50px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--text-dim);
+        }
+
+        /* ── How It Works ── */
+        .steps-section {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 40px 80px;
+        }
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+        .step {
+            text-align: center;
+            padding: 32px 20px;
+            position: relative;
+        }
+        .step-num {
+            width: 44px; height: 44px;
+            background: linear-gradient(135deg, var(--accent), #818cf8);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin: 0 auto 20px;
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+        .step h3 { font-size: 1rem; margin-bottom: 8px; }
+        .step p { color: var(--text-dim); font-size: 0.85rem; line-height: 1.6; }
+
+        /* ── Footer ── */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 32px 40px;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.82rem;
+        }
+        footer a {
+            color: var(--accent);
             text-decoration: none;
-            border-radius: 5px;
-            font-size: 18px;
-            font-weight: bold;
         }
-        .btn:hover {
-            background-color: #45a049;
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            nav { padding: 12px 20px; }
+            .nav-links { display: none; }
+            .hero { padding: 50px 20px 40px; }
+            .hero h1 { font-size: 2rem; }
+            .stats { grid-template-columns: repeat(2, 1fr); padding: 0 20px; margin-bottom: 50px; }
+            .features-grid { grid-template-columns: 1fr; }
+            .features-section, .model-section, .steps-section { padding-left: 20px; padding-right: 20px; }
+            .model-card { flex-direction: column; text-align: center; }
+            .steps { grid-template-columns: 1fr; }
+            .hero-actions { flex-direction: column; align-items: center; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🏦 Credit Card Default Prediction System</h1>
-        <p>Machine Learning system to predict credit card default probability using payment history, demographics, and financial data.</p>
-        <a href="/predictdata" class="btn">Start Prediction</a>
+
+<div class="ambient"></div>
+
+<nav>
+    <a href="/" class="logo">
+        <div class="logo-icon">🛡</div>
+        CreditGuard AI
+    </a>
+    <div class="nav-links">
+        <a href="#features" class="active">Features</a>
+        <a href="#model">Model</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="/predictdata" class="btn-primary">Start Prediction</a>
     </div>
+</nav>
+
+<main>
+    <!-- Hero -->
+    <section class="hero">
+        <div class="badge">ML-POWERED RISK ANALYSIS</div>
+        <h1>Predict Credit Card<br><span>Default Risk</span> Instantly</h1>
+        <p>An XGBoost-powered prediction engine trained on 30,000 credit profiles. Analyze payment history, demographics, and financial behavior to assess default probability in real-time.</p>
+        <div class="hero-actions">
+            <a href="/predictdata" class="btn-hero primary">Run Prediction &rarr;</a>
+            <a href="#how-it-works" class="btn-hero secondary">How It Works</a>
+        </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="stats">
+        <div class="stat-card">
+            <div class="stat-value accent">81.4%</div>
+            <div class="stat-label">ROC-AUC Score</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value green">30K</div>
+            <div class="stat-label">Training Samples</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value amber">41</div>
+            <div class="stat-label">Engineered Features</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value accent">6</div>
+            <div class="stat-label">Models Compared</div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features-section" id="features">
+        <div class="section-header">
+            <h2>Built for Accuracy</h2>
+            <p>A robust ML pipeline designed with production-grade feature engineering and rigorous model evaluation.</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon purple">📊</div>
+                <h3>17 Engineered Features</h3>
+                <p>Derived credit utilization ratios, payment behavior trends, and spending patterns from raw transaction history.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon green">⚡</div>
+                <h3>Real-Time Prediction</h3>
+                <p>Get instant risk assessment with probability scores, not just binary outcomes. Understand your confidence level.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon amber">🎯</div>
+                <h3>XGBoost Optimized</h3>
+                <p>Hyperparameter-tuned via GridSearchCV with 39 combinations across 2-fold cross-validation for optimal generalization.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon red">🔍</div>
+                <h3>6-Month History</h3>
+                <p>Analyzes payment status, bill amounts, and payment amounts across a 6-month window for temporal pattern detection.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon blue">🛡</div>
+                <h3>Preprocessing Pipeline</h3>
+                <p>Automated scaling, encoding, and feature transformation via sklearn ColumnTransformer — no manual data wrangling.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon pink">📈</div>
+                <h3>Risk Stratification</h3>
+                <p>Probability-based risk levels: Low (< 40%), Moderate (40-70%), High (≥ 70%) for actionable decision-making.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Model -->
+    <section class="model-section" id="model">
+        <div class="section-header">
+            <h2>The Engine Behind It</h2>
+            <p>Why XGBoost outperformed five other algorithms on our dataset.</p>
+        </div>
+        <div class="model-card">
+            <div class="model-visual">
+                <span>81.4%</span>
+            </div>
+            <div class="model-info">
+                <h3>XGBoost Classifier</h3>
+                <p>Selected after comparing Logistic Regression, Random Forest, Gradient Boosting, AdaBoost, and CatBoost. XGBoost achieved the highest ROC-AUC through its gradient boosting framework with regularization, handling the 78:22 class imbalance natively via the AUC optimization objective.</p>
+                <div class="model-tags">
+                    <span class="tag">Gradient Boosting</span>
+                    <span class="tag">L1/L2 Regularization</span>
+                    <span class="tag">Tree-Based</span>
+                    <span class="tag">Handles Imbalance</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="steps-section" id="how-it-works">
+        <div class="section-header">
+            <h2>How It Works</h2>
+            <p>Three simple steps to assess credit default risk.</p>
+        </div>
+        <div class="steps">
+            <div class="step">
+                <div class="step-num">1</div>
+                <h3>Enter Profile Data</h3>
+                <p>Provide demographics, 6-month payment history, bill amounts, and payment amounts through our guided form.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <h3>ML Pipeline Processes</h3>
+                <p>Data flows through our ColumnTransformer: numerical scaling, categorical encoding, and 17 engineered features are computed automatically.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <h3>Get Risk Assessment</h3>
+                <p>Receive a probability score, risk classification, and actionable recommendation — all in under a second.</p>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>CreditGuard AI &mdash; UCI Credit Card Default Prediction &mdash; Built with XGBoost, Flask, and scikit-learn</p>
+</footer>
+
 </body>
 </html>

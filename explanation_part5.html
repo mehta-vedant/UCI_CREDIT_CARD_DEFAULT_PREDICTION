@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part 5 - Model Evaluation, Deployment & End-to-End Pipeline Summary</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0d1117; color: #c9d1d9; line-height: 1.7; }
+
+        .hero {
+            background: linear-gradient(135deg, #d32f2f, #b71c1c);
+            padding: 60px 20px 50px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at center, rgba(255,255,255,0.05) 0%, transparent 70%);
+            animation: shimmer 8s infinite;
+        }
+        @keyframes shimmer { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(180deg)} }
+        .hero h1 { font-size: 2.2rem; color: #fff; position: relative; z-index: 1; }
+        .hero p { color: rgba(255,255,255,0.85); font-size: 1.1rem; margin-top: 10px; position: relative; z-index: 1; }
+        .hero .badge { display: inline-block; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); padding: 4px 16px; border-radius: 20px; font-size: 0.85rem; margin-top: 12px; position: relative; z-index: 1; color: #fff; }
+
+        nav { background: #161b22; border-bottom: 1px solid #30363d; padding: 12px 20px; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; position: sticky; top: 0; z-index: 100; }
+        nav a { color: #8b949e; text-decoration: none; padding: 8px 18px; border-radius: 6px; font-size: 0.9rem; transition: all 0.2s; }
+        nav a:hover { background: #21262d; color: #c9d1d9; }
+        nav a.active { background: linear-gradient(135deg, #d32f2f, #b71c1c); color: #fff; font-weight: 600; }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
+
+        .section { margin-bottom: 50px; }
+        .section-title {
+            font-size: 1.7rem;
+            color: #f0f6fc;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #d32f2f;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .section-num {
+            background: linear-gradient(135deg, #d32f2f, #b71c1c);
+            color: #fff;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            padding: 28px;
+            margin-bottom: 20px;
+            transition: border-color 0.3s;
+        }
+        .card:hover { border-color: #d32f2f; }
+        .card h3 { color: #f0f6fc; font-size: 1.2rem; margin-bottom: 12px; }
+        .card h4 { color: #d32f2f; margin-bottom: 8px; }
+
+        .code-block {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.88rem;
+            overflow-x: auto;
+            margin: 15px 0;
+            line-height: 1.5;
+            color: #c9d1d9;
+        }
+        .code-block .comment { color: #8b949e; }
+        .code-block .keyword { color: #ff7b72; }
+        .code-block .string { color: #a5d6ff; }
+        .code-block .func { color: #d2a8ff; }
+        .code-block .num { color: #79c0ff; }
+
+        .highlight-box {
+            background: rgba(211, 47, 47, 0.1);
+            border-left: 4px solid #d32f2f;
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 15px 0;
+        }
+        .highlight-box.green {
+            background: rgba(35, 134, 54, 0.15);
+            border-left-color: #238636;
+        }
+        .highlight-box.yellow {
+            background: rgba(210, 153, 34, 0.12);
+            border-left-color: #d29922;
+        }
+        .highlight-box.blue {
+            background: rgba(56, 139, 253, 0.12);
+            border-left-color: #388bfd;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 0.95rem;
+        }
+        th, td {
+            padding: 12px 16px;
+            border: 1px solid #30363d;
+            text-align: left;
+        }
+        th {
+            background: #21262d;
+            color: #f0f6fc;
+            font-weight: 600;
+        }
+        td { background: #161b22; }
+        tr:hover td { background: #1c2129; }
+
+        .metric-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 18px;
+        }
+        .metric-card h4 {
+            color: #d32f2f;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .analogy {
+            background: rgba(210, 153, 34, 0.1);
+            border-left: 3px solid #d29922;
+            padding: 10px 14px;
+            border-radius: 0 6px 6px 0;
+            margin-top: 10px;
+            font-style: italic;
+            font-size: 0.93rem;
+        }
+
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 25px 0;
+        }
+        .flow-step {
+            background: linear-gradient(135deg, #d32f2f, #b71c1c);
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+            min-width: 100px;
+        }
+        .flow-step.alt { background: #21262d; border: 1px solid #d32f2f; color: #d32f2f; }
+        .flow-arrow { color: #d32f2f; font-size: 1.3rem; font-weight: 700; }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+        .stat-box {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        .stat-box .value {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #d32f2f, #ff6659);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-box .label { color: #8b949e; font-size: 0.85rem; margin-top: 4px; }
+
+        .nav-footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid #30363d;
+        }
+        .nav-footer a {
+            color: #d32f2f;
+            text-decoration: none;
+            padding: 10px 24px;
+            border: 1px solid #d32f2f;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+        .nav-footer a:hover { background: #d32f2f; color: #fff; }
+
+        .pipeline-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin: 20px 0;
+        }
+        .pipeline-row {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+        .pipeline-node {
+            background: #161b22;
+            border: 2px solid #30363d;
+            border-radius: 10px;
+            padding: 14px 20px;
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+        .pipeline-node.highlight { border-color: #d32f2f; background: rgba(211,47,47,0.08); }
+        .pipeline-node .step-num { color: #d32f2f; font-weight: 700; font-size: 0.8rem; }
+        .pipeline-node .step-title { color: #f0f6fc; font-weight: 600; font-size: 0.95rem; }
+        .pipeline-node .step-detail { color: #8b949e; font-size: 0.8rem; margin-top: 2px; }
+        .pipeline-connector {
+            display: flex;
+            justify-content: center;
+            padding: 4px 0;
+            color: #d32f2f;
+            font-size: 1.2rem;
+        }
+
+        .pro-con { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .pro { border-left-color: #238636; }
+        .con { border-left-color: #d32f2f; }
+
+        @media (max-width: 768px) {
+            .grid-2, .grid-3, .pro-con { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 1.5rem; }
+            .flow-diagram { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="hero">
+    <h1>Part 5: Model Evaluation, Deployment &amp; Pipeline Summary</h1>
+    <p>Understanding how we measure success, ship to production, and look back at the full journey</p>
+    <span class="badge">The Capstone - Tying Everything Together</span>
+</div>
+
+<nav>
+    <a href="explanation_part1.html">Part 1</a>
+    <a href="explanation_part2.html">Part 2</a>
+    <a href="explanation_part3.html">Part 3</a>
+    <a href="explanation_part4.html">Part 4</a>
+    <a href="explanation_part5.html" class="active">Part 5</a>
+</nav>
+
+<div class="container">
+
+    <!-- ==================== SECTION 1: MODEL EVALUATION ==================== -->
+    <div class="section">
+        <div class="section-title">
+            <span class="section-num">1</span>
+            Model Evaluation Metrics Explained
+        </div>
+
+        <p style="margin-bottom:20px;">Training a model is only half the battle. Knowing <em>how to measure it</em> is what separates good ML engineers from great ones. Here we explain every metric we used, why we chose ROC-AUC as primary, and what the numbers actually mean.</p>
+
+        <!-- ROC-AUC -->
+        <div class="metric-card">
+            <h4>ROC-AUC Score (Primary Metric) &mdash; 0.814</h4>
+            <p>The <strong>Receiver Operating Characteristic - Area Under Curve</strong> is our primary metric. It measures the model's ability to distinguish between defaulters and non-defaulters across all possible classification thresholds.</p>
+
+            <svg viewBox="0 0 500 380" style="width:100%;max-width:480px;margin:20px auto;display:block;">
+                <defs>
+                    <linearGradient id="redG" x1="0" y1="1" x2="1" y2="0">
+                        <stop offset="0%" stop-color="#d32f2f" stop-opacity="0.3"/>
+                        <stop offset="100%" stop-color="#d32f2f" stop-opacity="0.05"/>
+                    </linearGradient>
+                </defs>
+                <!-- Background -->
+                <rect x="60" y="20" width="400" height="300" fill="#0d1117" rx="4"/>
+                <!-- Axes -->
+                <line x1="60" y1="320" x2="460" y2="320" stroke="#30363d" stroke-width="2"/>
+                <line x1="60" y1="20" x2="60" y2="320" stroke="#30363d" stroke-width="2"/>
+                <!-- Grid -->
+                <line x1="60" y1="95" x2="460" y2="95" stroke="#21262d" stroke-width="1" stroke-dasharray="4"/>
+                <line x1="60" y1="170" x2="460" y2="170" stroke="#21262d" stroke-width="1" stroke-dasharray="4"/>
+                <line x1="60" y1="245" x2="460" y2="245" stroke="#21262d" stroke-width="1" stroke-dasharray="4"/>
+                <line x1="160" y1="20" x2="160" y2="320" stroke="#21262d" stroke-width="1" stroke-dasharray="4"/>
+                <line x1="260" y1="20" x2="260" y2="320" stroke="#21262d" stroke-width="1" stroke-dasharray="4"/>
+                <line x1="360" y1="20" x2="360" y2="320" stroke="#21262d" stroke-width="1" stroke-dasharray="4"/>
+                <!-- Labels -->
+                <text x="260" y="365" fill="#8b949e" text-anchor="middle" font-size="13">False Positive Rate (1 - Specificity)</text>
+                <text x="15" y="170" fill="#8b949e" text-anchor="middle" font-size="13" transform="rotate(-90,15,170)">True Positive Rate (Sensitivity)</text>
+                <!-- Diagonal (random) -->
+                <line x1="60" y1="320" x2="460" y2="20" stroke="#484f58" stroke-width="2" stroke-dasharray="8,4"/>
+                <text x="390" y="290" fill="#484f58" font-size="11">Random (AUC=0.5)</text>
+                <!-- Our ROC curve (AUC=0.814) -->
+                <path d="M60,320 C100,320 120,300 150,240 C180,180 200,120 240,80 C280,50 340,35 460,20" fill="none" stroke="#d32f2f" stroke-width="3"/>
+                <!-- Shade under curve -->
+                <path d="M60,320 C100,320 120,300 150,240 C180,180 200,120 240,80 C280,50 340,35 460,20 L460,320 Z" fill="url(#redG)"/>
+                <!-- AUC label -->
+                <text x="200" y="180" fill="#d32f2f" font-size="20" font-weight="bold">AUC = 0.814</text>
+                <!-- Perfect line -->
+                <line x1="60" y1="320" x2="60" y2="20" stroke="#238636" stroke-width="2" stroke-dasharray="4"/>
+                <line x1="60" y1="20" x2="460" y2="20" stroke="#238636" stroke-width="2" stroke-dasharray="4"/>
+                <text x="85" y="40" fill="#238636" font-size="11">Perfect (AUC=1.0)</text>
+                <!-- Axis ticks -->
+                <text x="60" y="338" fill="#8b949e" font-size="10" text-anchor="middle">0.0</text>
+                <text x="160" y="338" fill="#8b949e" font-size="10" text-anchor="middle">0.25</text>
+                <text x="260" y="338" fill="#8b949e" font-size="10" text-anchor="middle">0.50</text>
+                <text x="360" y="338" fill="#8b949e" font-size="10" text-anchor="middle">0.75</text>
+                <text x="460" y="338" fill="#8b949e" font-size="10" text-anchor="middle">1.0</text>
+                <text x="52" y="324" fill="#8b949e" font-size="10" text-anchor="middle">0.0</text>
+                <text x="52" y="249" fill="#8b949e" font-size="10" text-anchor="middle">0.25</text>
+                <text x="52" y="174" fill="#8b949e" font-size="10" text-anchor="middle">0.50</text>
+                <text x="52" y="99" fill="#8b949e" font-size="10" text-anchor="middle">0.75</text>
+                <text x="52" y="24" fill="#8b949e" font-size="10" text-anchor="middle">1.0</text>
+            </svg>
+
+            <div class="analogy">
+                <strong>Analogy:</strong> Think of ROC-AUC as a test score. 50% is pure guessing (a coin flip). 100% is a perfect oracle. Our 0.814 means the model has an 81.4% chance of correctly ranking a random defaulter higher than a random non-defaulter. In the medical world, an AUC of 0.8+ is considered "good" for a diagnostic test.
+            </div>
+
+            <div class="highlight-box" style="margin-top:14px;">
+                <strong>What does 0.814 mean practically?</strong><br>
+                If we pick one customer who defaulted and one who didn't, our model correctly ranks the defaulter higher <strong>81.4% of the time</strong>. The remaining 18.6% is where the model gets confused &mdash; but it's far better than a random guess (50%).
+            </div>
+        </div>
+
+        <!-- Accuracy -->
+        <div class="metric-card">
+            <h4>Accuracy &mdash; 82.3%</h4>
+            <p>Accuracy is the most intuitive metric: <strong>what percentage of all predictions were correct?</strong> However, it's dangerously misleading with imbalanced data.</p>
+
+            <div class="highlight-box yellow">
+                <strong>Why accuracy lies with imbalanced data:</strong><br>
+                Our dataset has ~78% non-defaulters and ~22% defaulters. If a "model" simply predicts <em>"No Default"</em> for every customer, it achieves <strong>78% accuracy</strong> &mdash; while catching zero defaulters! Our 82.3% accuracy is only 4.3% better than this useless baseline, yet the model is actually <em>much</em> more useful than that number suggests.
+            </div>
+
+            <div class="analogy">
+                <strong>Example:</strong> Imagine a fire alarm that never goes off. It's "correct" every day there's no fire (99.9% of days). But the one day there IS a fire, it fails completely. Its accuracy is 99.9%, yet it's useless. That's why we need better metrics.
+            </div>
+        </div>
+
+        <!-- Precision -->
+        <div class="metric-card">
+            <h4>Precision &mdash; "The False Alarm Rate"</h4>
+            <p><strong>Precision = TP / (TP + FP)</strong> &mdash; Of all the customers we flagged as "Will Default", how many actually did default?</p>
+
+            <div class="code-block">
+<span class="comment"># From our classification report (model_trainer.py:107)</span>
+<span class="func">classification_report</span>(y_test, predicted, output_dict=<span class="keyword">True</span>)
+
+<span class="comment"># Example output:</span>
+<span class="comment"># Class 0 (No Default):  precision=0.84  recall=0.95  f1=0.89</span>
+<span class="comment"># Class 1 (Default):     precision=0.68  recall=0.38  f1=0.49</span>
+</div>
+
+            <div class="analogy">
+                <strong>Analogy &mdash; Airport Security:</strong> Precision is like the security scanner. High precision means few false alarms (innocent passengers pulled aside unnecessarily). Low precision means tons of false alarms &mdash; everyone gets stopped, wasting resources. In credit, low precision means rejecting good customers.
+            </div>
+        </div>
+
+        <!-- Recall -->
+        <div class="metric-card">
+            <h4>Recall (Sensitivity) &mdash; "The Catch Rate"</h4>
+            <p><strong>Recall = TP / (TP + FN)</strong> &mdash; Of all the customers who <em>actually</em> defaulted, how many did our model catch?</p>
+
+            <div class="analogy">
+                <strong>Analogy &mdash; Cancer Screening:</strong> Recall is like a cancer screening. Missing a cancer patient (false negative) is far worse than a false alarm (false positive). You want HIGH recall even if precision drops. In credit risk, high recall means we catch most defaulters &mdash; protecting the bank from losses, even if we occasionally flag good customers.
+            </div>
+
+            <div class="highlight-box blue">
+                <strong>The Precision-Recall Tradeoff:</strong><br>
+                We can't maximize both simultaneously. Catching more defaulters (higher recall) usually means more false alarms (lower precision). The ROC-AUC metric elegantly captures this tradeoff across <em>all</em> thresholds, which is why we use it as our primary metric.
+            </div>
+        </div>
+
+        <!-- F1-Score -->
+        <div class="metric-card">
+            <h4>F1-Score &mdash; "The Balance"</h4>
+            <p><strong>F1 = 2 &times; (Precision &times; Recall) / (Precision + Recall)</strong> &mdash; The harmonic mean of precision and recall. It balances both concerns into a single number.</p>
+
+            <div class="analogy">
+                <strong>When to use F1:</strong> F1 is most useful when you care about <em>both</em> false positives and false negatives equally. It penalizes extreme imbalances. If precision=0.95 but recall=0.20, the F1 is only 0.34 &mdash; correctly reflecting the model's weakness despite the high precision.
+            </div>
+        </div>
+
+        <!-- Confusion Matrix -->
+        <div class="metric-card">
+            <h4>Confusion Matrix</h4>
+            <p>The confusion matrix gives a complete picture of all four possible outcomes. It's the foundation for computing precision, recall, and F1.</p>
+
+            <svg viewBox="0 0 480 340" style="width:100%;max-width:440px;margin:15px auto;display:block;">
+                <!-- Labels -->
+                <text x="240" y="20" fill="#f0f6fc" font-size="14" font-weight="bold" text-anchor="middle">Predicted</text>
+                <text x="170" y="48" fill="#8b949e" font-size="12" text-anchor="middle">No Default</text>
+                <text x="350" y="48" fill="#8b949e" font-size="12" text-anchor="middle">Default</text>
+                <text x="20" y="160" fill="#f0f6fc" font-size="14" font-weight="bold" text-anchor="middle" transform="rotate(-90,20,160)">Actual</text>
+                <text x="70" y="105" fill="#8b949e" font-size="12" text-anchor="middle" transform="rotate(-90,70,105)">No Default</text>
+                <text x="70" y="240" fill="#8b949e" font-size="12" text-anchor="middle" transform="rotate(-90,70,240)">Default</text>
+
+                <!-- TP -->
+                <rect x="100" y="60" width="140" height="100" rx="8" fill="rgba(35,134,54,0.2)" stroke="#238636" stroke-width="2"/>
+                <text x="170" y="100" fill="#238636" font-size="28" font-weight="bold" text-anchor="middle">TP</text>
+                <text x="170" y="128" fill="#8b949e" font-size="11" text-anchor="middle">True Positives</text>
+                <text x="170" y="145" fill="#7ee787" font-size="10" text-anchor="middle">Correctly predicted default</text>
+
+                <!-- FP -->
+                <rect x="280" y="60" width="140" height="100" rx="8" fill="rgba(210,153,34,0.15)" stroke="#d29922" stroke-width="2"/>
+                <text x="350" y="100" fill="#d29922" font-size="28" font-weight="bold" text-anchor="middle">FP</text>
+                <text x="350" y="128" fill="#8b949e" font-size="11" text-anchor="middle">False Positives</text>
+                <text x="350" y="145" fill="#e3b341" font-size="10" text-anchor="middle">Good customer flagged wrong</text>
+
+                <!-- FN -->
+                <rect x="100" y="190" width="140" height="100" rx="8" fill="rgba(248,81,73,0.15)" stroke="#f85149" stroke-width="2"/>
+                <text x="170" y="230" fill="#f85149" font-size="28" font-weight="bold" text-anchor="middle">FN</text>
+                <text x="170" y="258" fill="#8b949e" font-size="11" text-anchor="middle">False Negatives</text>
+                <text x="170" y="275" fill="#f85149" font-size="10" text-anchor="middle">Default missed (most costly!)</text>
+
+                <!-- TN -->
+                <rect x="280" y="190" width="140" height="100" rx="8" fill="rgba(56,139,253,0.15)" stroke="#388bfd" stroke-width="2"/>
+                <text x="350" y="230" fill="#388bfd" font-size="28" font-weight="bold" text-anchor="middle">TN</text>
+                <text x="350" y="258" fill="#8b949e" font-size="11" text-anchor="middle">True Negatives</text>
+                <text x="350" y="275" fill="#79c0ff" font-size="10" text-anchor="middle">Correctly predicted no default</text>
+
+                <!-- Formulae -->
+                <text x="170" y="318" fill="#8b949e" font-size="11" text-anchor="middle">Precision = TP/(TP+FP)  |  Recall = TP/(TP+FN)</text>
+                <text x="350" y="318" fill="#8b949e" font-size="11" text-anchor="middle">Accuracy = (TP+TN)/Total</text>
+            </svg>
+
+            <div class="highlight-box">
+                <strong>Cost Asymmetry:</strong> In credit default prediction, a <strong>False Negative</strong> (missing a defaulter) is far more costly than a <strong>False Positive</strong> (flagging a good customer). The bank loses the full unpaid bill in an FN, but only loses potential interest in an FP.
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== SECTION 2: MODEL RESULTS ==================== -->
+    <div class="section">
+        <div class="section-title">
+            <span class="section-num">2</span>
+            Our Model Results
+        </div>
+
+        <div class="grid-2">
+            <div class="stat-box">
+                <div class="value">0.814</div>
+                <div class="label">Best ROC-AUC (XGBoost)</div>
+            </div>
+            <div class="stat-box">
+                <div class="value">82.3%</div>
+                <div class="label">Best Accuracy</div>
+            </div>
+        </div>
+
+        <table style="margin-top:20px;">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Algorithm</th>
+                    <th>ROC-AUC Score</th>
+                    <th>Accuracy</th>
+                    <th>Performance Bar</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>🥇 1</td>
+                    <td><strong>XGBoost</strong></td>
+                    <td><strong>0.814</strong></td>
+                    <td><strong>82.3%</strong></td>
+                    <td>
+                        <svg viewBox="0 0 200 20" style="width:160px;">
+                            <rect x="0" y="4" width="200" height="12" rx="6" fill="#21262d"/>
+                            <rect x="0" y="4" width="162.8" height="12" rx="6" fill="url(#redG)"/>
+                            <rect x="0" y="4" width="162.8" height="12" rx="6" fill="#d32f2f"/>
+                        </svg>
+                    </td>
+                </tr>
+                <tr>
+                    <td>🥈 2</td>
+                    <td>CatBoost</td>
+                    <td>0.809</td>
+                    <td>81.9%</td>
+                    <td>
+                        <svg viewBox="0 0 200 20" style="width:160px;">
+                            <rect x="0" y="4" width="200" height="12" rx="6" fill="#21262d"/>
+                            <rect x="0" y="4" width="161.8" height="12" rx="6" fill="#f0883e"/>
+                        </svg>
+                    </td>
+                </tr>
+                <tr>
+                    <td>🥉 3</td>
+                    <td>Random Forest</td>
+                    <td>0.806</td>
+                    <td>81.6%</td>
+                    <td>
+                        <svg viewBox="0 0 200 20" style="width:160px;">
+                            <rect x="0" y="4" width="200" height="12" rx="6" fill="#21262d"/>
+                            <rect x="0" y="4" width="161.2" height="12" rx="6" fill="#3fb950"/>
+                        </svg>
+                    </td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td>Gradient Boosting</td>
+                    <td>0.803</td>
+                    <td>81.4%</td>
+                    <td>
+                        <svg viewBox="0 0 200 20" style="width:160px;">
+                            <rect x="0" y="4" width="200" height="12" rx="6" fill="#21262d"/>
+                            <rect x="0" y="4" width="160.6" height="12" rx="6" fill="#388bfd"/>
+                        </svg>
+                    </td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td>Logistic Regression</td>
+                    <td>~0.76</td>
+                    <td>~78%</td>
+                    <td>
+                        <svg viewBox="0 0 200 20" style="width:160px;">
+                            <rect x="0" y="4" width="200" height="12" rx="6" fill="#21262d"/>
+                            <rect x="0" y="4" width="152" height="12" rx="6" fill="#8b949e"/>
+                        </svg>
+                    </td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td>AdaBoost</td>
+                    <td>~0.75</td>
+                    <td>~77%</td>
+                    <td>
+                        <svg viewBox="0 0 200 20" style="width:160px;">
+                            <rect x="0" y="4" width="200" height="12" rx="6" fill="#21262d"/>
+                            <rect x="0" y="4" width="150" height="12" rx="6" fill="#8b949e"/>
+                        </svg>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="highlight-box" style="margin-top:16px;">
+            <strong>Interpreting the scores:</strong> The top 4 models are within ~1% of each other &mdash; this is normal. Gradient boosting methods (XGBoost, CatBoost, Gradient Boosting) all outperform linear models because the data has non-linear patterns (interaction between payment history + bill amounts + demographics). The top performer, XGBoost, wins by a slim but consistent margin.
+        </div>
+    </div>
+
+    <!-- ==================== SECTION 3: WHY XGBOOST WON ==================== -->
+    <div class="section">
+        <div class="section-title">
+            <span class="section-num">3</span>
+            Why XGBoost Won
+        </div>
+
+        <p style="margin-bottom:15px;">XGBoost edged out competitors for several specific reasons tied to this dataset's characteristics:</p>
+
+        <div class="grid-2">
+            <div class="card">
+                <h4>1. Sequential Error Correction</h4>
+                <p>XGBoost builds trees sequentially. Each new tree focuses on the errors (residuals) of the previous ones. For credit data, this means the model can first learn obvious patterns (payment delay = high risk), then fine-tune on subtler signals (utilization trends).</p>
+            </div>
+            <div class="card">
+                <h4>2. Regularization Built-In</h4>
+                <p>XGBoost has L1 and L2 regularization to prevent overfitting. With 30,000 rows and 41 features (24 original + 17 engineered), overfitting is a real risk. XGBoost's regularization helps it generalize better than CatBoost's default settings.</p>
+            </div>
+            <div class="card">
+                <h4>3. Handles Missing Values</h4>
+                <p>Our data has some missing bill amounts and payment statuses. XGBoost has a native algorithm for handling missing values during tree splits, learning the best direction (left or right) for missing data at each node.</p>
+            </div>
+            <div class="card">
+                <h4>4. Efficient with Tabular Data</h4>
+                <p>Gradient boosting methods consistently win Kaggle tabular competitions because they naturally model feature interactions. The combination of PAY_0 + BILL_AMT1 + LIMIT_BAL creates a powerful signal that linear models can't capture.</p>
+            </div>
+        </div>
+
+        <div class="code-block">
+<span class="comment"># From model_trainer.py - The winning configuration</span>
+<span class="keyword">XGBClassifier</span>(
+    random_state=<span class="num">42</span>,
+    eval_metric=<span class="string">'logloss'</span>,
+    n_estimators=<span class="num">100</span>,     <span class="comment"># Best after tuning (was 50)</span>
+    max_depth=<span class="num">6</span>,          <span class="comment"># Best after tuning (tried 3, 6)</span>
+    learning_rate=<span class="num">0.1</span>,    <span class="comment"># Best after tuning (tried 0.1, 0.2)</span>
+    n_jobs=-<span class="num">1</span>
+)
+</div>
+    </div>
+
+    <!-- ==================== SECTION 4: MODEL ARTIFACTS ==================== -->
+    <div class="section">
+        <div class="section-title">
+            <span class="section-num">4</span>
+            Model Artifacts
+        </div>
+
+        <p>After training, we save two critical files to the <code>artifacts/</code> directory. These are the "brain" and the "translator" of our prediction system:</p>
+
+        <div class="grid-2" style="margin-top:16px;">
+            <div class="card">
+                <h4>artifacts/model.pkl</h4>
+                <p>The trained XGBoost model &mdash; all the learned decision trees and their splits. This is what makes predictions. Without this, the trained knowledge is lost.</p>
+                <div class="code-block">
+<span class="comment"># model_trainer.py:97-100</span>
+<span class="func">save_object</span>(
+    file_path=self.model_trainer_config
+        .trained_model_file_path,
+    obj=best_model
+)</div>
+            </div>
+            <div class="card">
+                <h4>artifacts/preprocessor.pkl</h4>
+                <p>The preprocessing pipeline (feature engineering + StandardScaler). It ensures new data gets the <em>exact same</em> transformations as training data. Inconsistency = garbage predictions.</p>
+                <div class="code-block">
+<span class="comment"># The preprocessor handles:</span>
+<span class="comment"># 1. Feature engineering (17 new features)</span>
+<span class="comment"># 2. StandardScaler for numerical features</span>
+<span class="comment"># Same transforms as training!</span></div>
+            </div>
+        </div>
+
+        <div class="highlight-box yellow" style="margin-top:16px;">
+            <strong>Pickle Serialization:</strong> Python's <code>pickle</code> module converts a Python object (model, pipeline) into a byte stream that can be saved to disk and loaded later. We need <em>both</em> files because the model only works on <em>scaled, engineered</em> features. Raw user input must go through the preprocessor first.
+        </div>
+
+        <div class="code-block">
+<span class="comment"># utils.py - save_object and load_object</span>
+<span class="keyword">import</span> pickle
+
+<span class="keyword">def</span> <span class="func">save_object</span>(file_path, obj):
+    <span class="keyword">with</span> <span class="func">open</span>(file_path, <span class="string">"wb"</span>) <span class="keyword">as</span> file_obj:
+        pickle.<span class="func">dump</span>(obj, file_obj)
+
+<span class="keyword">def</span> <span class="func">load_object</span>(file_path):
+    <span class="keyword">with</span> <span class="func">open</span>(file_path, <span class="string">"rb"</span>) <span class="keyword">as</span> file_obj:
+        <span class="keyword">return</span> pickle.<span class="func">load</span>(file_obj)
+</div>
+    </div>
+
+    <!-- ==================== SECTION 5: PREDICTION PIPELINE ==================== -->
+    <div class="section">
+        <div class="section-title">
+            <span class="section-num">5</span>
+            Prediction Pipeline Explained
+        </div>
+
+        <p>Here's the exact flow from a user clicking "Predict" to seeing a result:</p>
+
+        <div class="pipeline-flow">
+            <div class="pipeline-row">
+                <div class="pipeline-node highlight">
+                    <div class="step-num">STEP 1</div>
+                    <div class="step-title">User Enters Data</div>
+                    <div class="step-detail">24 fields in web form (home.html)</div>
+                </div>
+            </div>
+            <div class="pipeline-connector">&#8595;</div>
+            <div class="pipeline-row">
+                <div class="pipeline-node">
+                    <div class="step-num">STEP 2</div>
+                    <div class="step-title">Flask Route Receives POST</div>
+                    <div class="step-detail">application.py:16 - /predictdata POST</div>
+                </div>
+            </div>
+            <div class="pipeline-connector"> &#8595;</div>
+            <div class="pipeline-row">
+                <div class="pipeline-node highlight">
+                    <div class="step-num">STEP 3</div>
+                    <div class="step-title">CustomData Class</div>
+                    <div class="step-detail">predict_pipeline.py:29 - Converts form to DataFrame</div>
+                </div>
+            </div>
+            <div class="pipeline-connector">&#8595;</div>
+            <div class="pipeline-row">
+                <div class="pipeline-node">
+                    <div class="step-num">STEP 4</div>
+                    <div class="step-title">Preprocessor Transforms</div>
+                    <div class="step-detail">Feature engineering + scaling (preprocessor.pkl)</div>
+                </div>
+            </div>
+            <div class="pipeline-connector">&#8595;</div>
+            <div class="pipeline-row">
+                <div class="pipeline-node highlight">
+                    <div class="step-num">STEP 5</div>
+                    <div class="step-title">XGBoost Predicts</div>
+                    <div class="step-detail">model.predict() on transformed features (model.pkl)</div>
+                </div>
+            </div>
+            <div class="pipeline-connector">&#8595;</div>
+            <div class="pipeline-row">
+                <div class="pipeline-node">
+                    <div class="step-num">STEP 6</div>
+                    <div class="step-title">Result Displayed</div>
+                    <div class="step-detail">"Will Default" or "Will Not Default" on home.html</div>
+                </div>
+            </div>
+        </div>
+
+        <h3 style="color:#f0f6fc;margin:25px 0 12px;">The Actual Code Flow</h3>
+
+        <div class="code-block">
+<span class="comment"># application.py - The prediction route</span>
+
+@app.<span class="func">route</span>(<span class="string">'/predictdata'</span>, methods=[<span class="string">'GET'</span>, <span class="string">'POST'</span>])
+<span class="keyword">def</span> <span class="func">predict_datapoint</span>():
+    <span class="keyword">if</span> request.method == <span class="string">'GET'</span>:
+        <span class="keyword">return</span> <span class="func">render_template</span>(<span class="string">'home.html'</span>)
+    <span class="keyword">else</span>:
+        <span class="comment"># Step 2-3: Extract form data into CustomData class</span>
+        data = <span class="func">CustomData</span>(
+            LIMIT_BAL=<span class="func">float</span>(request.form.get(<span class="string">'LIMIT_BAL'</span>)),
+            SEX=<span class="func">int</span>(request.form.get(<span class="string">'SEX'</span>)),
+            EDUCATION=<span class="func">int</span>(request.form.get(<span class="string">'EDUCATION'</span>)),
+            <span class="comment"># ... 21 more fields ...</span>
+            PAY_AMT6=<span class="func">float</span>(request.form.get(<span class="string">'PAY_AMT6'</span>))
+        )
+
+        <span class="comment"># Step 3: Convert to DataFrame</span>
+        pred_df = data.<span class="func">get_data_as_data_frame</span>()
+
+        <span class="comment"># Step 4-5: Load model + preprocessor, predict</span>
+        predict_pipeline = <span class="func">PredictPipeline</span>()
+        results = predict_pipeline.<span class="func">predict</span>(pred_df)
+
+        <span class="comment"># Step 6: Format result</span>
+        prediction_text = <span class="string">"Will Default"</span> <span class="keyword">if</span> results[<span class="num">0</span>] == <span class="num">1</span> <span class="keyword">else</span> <span class="string">"Will Not Default"</span>
+        <span class="keyword">return</span> <span class="func">render_template</span>(<span class="string">'home.html'</span>, results=prediction_text)
+</div>
+
+        <div class="code-block">
+<span class="comment"># predict_pipeline.py - The core prediction logic</span>
+<span class="keyword">class</span> <span class="func">PredictPipeline</span>:
+    <span class="keyword">def</span> <span class="func">predict</span>(self, features):
+        <span class="comment"># Load saved artifacts</span>
+        model = <span class="func">load_object</span>(file_path=<span class="string">"artifacts/model.pkl"</span>)
+        preprocessor = <span class="func">load_object</span>(file_path=<span class="string">"artifacts/preprocessor.pkl"</span>)
+
+        <span class="comment"># Transform raw data using the SAME pipeline as training</span>
+        data_scaled = preprocessor.<span class="func">transform</span>(features)
+
+        <span class="comment"># Predict using the trained model</span>
+        preds = model.<span class="func">predict</span>(data_scaled)
+        <span class="keyword">return</span> preds
+</div>
+    </div>
+
+    <!-- ==================== SECTION 6: WEB APPLICATION ==================== -->
+    <div class="section">
+        <div class="section-title">
+            <span class="section-num">6</span>
+            Web Application Architecture
+        </div>
+
+        <p>Our Flask app has three main components working together:</p>
+
+        <svg viewBox="0 0 800 260" style="width:100%;max-width:780px;margin:20px auto;display:block;">
+            <!-- User -->
+            <rect x="10" y="80" width="120" height="100" rx="10" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+            <text x="70" y="118" fill="#f0f6fc" font-size="12" font-weight="bold" text-anchor="middle">User</text>
+            <text x="70" y="138" fill="#8b949e" font-size="10" text-anchor="middle">Browser</text>
+            <text x="70" y="158" fill="#8b949e" font-size="10" text-anchor="middle">(home.html)</text>
+
+            <!-- Arrow -->
+            <line x1="130" y1="130" x2="200" y2="130" stroke="#d32f2f" stroke-width="2" marker-end="url(#arrowhead)"/>
+            <text x="165" y="120" fill="#d32f2f" font-size="9" text-anchor="middle">GET/POST</text>
+            <defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#d32f2f"/></marker></defs>
+
+            <!-- Flask App -->
+            <rect x="200" y="50" width="180" height="160" rx="10" fill="#161b22" stroke="#d32f2f" stroke-width="2"/>
+            <text x="290" y="80" fill="#f0f6fc" font-size="13" font-weight="bold" text-anchor="middle">Flask App</text>
+            <text x="290" y="100" fill="#d32f2f" font-size="11" text-anchor="middle">application.py</text>
+            <text x="290" y="125" fill="#8b949e" font-size="10" text-anchor="middle">Route: /predictdata</text>
+            <text x="290" y="143" fill="#8b949e" font-size="10" text-anchor="middle">CustomData class</text>
+            <text x="290" y="161" fill="#8b949e" font-size="10" text-anchor="middle">PredictPipeline</text>
+
+            <!-- Arrow -->
+            <line x1="380" y1="130" x2="440" y2="130" stroke="#d32f2f" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+            <!-- Artifacts -->
+            <rect x="440" y="50" width="160" height="70" rx="10" fill="#161b22" stroke="#238636" stroke-width="2"/>
+            <text x="520" y="80" fill="#f0f6fc" font-size="12" font-weight="bold" text-anchor="middle">Artifacts</text>
+            <text x="520" y="100" fill="#238636" font-size="10" text-anchor="middle">model.pkl + preprocessor.pkl</text>
+
+            <!-- Arrow back -->
+            <line x1="440" y1="175" x2="380" y2="175" stroke="#238636" stroke-width="2" marker-end="url(#greenarrow)"/>
+            <defs><marker id="greenarrow" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto"><polygon points="10 0, 0 3.5, 10 7" fill="#238636"/></marker></defs>
+            <text x="410" y="168" fill="#238636" font-size="9" text-anchor="middle">prediction</text>
+
+            <!-- Result back to user -->
+            <line x1="200" y1="175" x2="130" y2="175" stroke="#388bfd" stroke-width="2" marker-end="url(#bluearrow)"/>
+            <defs><marker id="bluearrow" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto"><polygon points="10 0, 0 3.5, 10 7" fill="#388bfd"/></marker></defs>
+            <text x="165" y="195" fill="#388bfd" font-size="9" text-anchor="middle">HTML response</text>
+
+            <!-- Templates -->
+            <rect x="440" y="140" width="160" height="70" rx="10" fill="#161b22" stroke="#d29922" stroke-width="2"/>
+            <text x="520" y="170" fill="#f0f6fc" font-size="12" font-weight="bold" text-anchor="middle">Templates</text>
+            <text x="520" y="190" fill="#d29922" font-size="10" text-anchor="middle">home.html (24-field form)</text>
+        </svg>
+
+        <h3 style="color:#f0f6fc;margin:20px 0 12px;">GET vs POST &mdash; Simply Explained</h3>
+        <div class="grid-2">
+            <div class="card">
+                <h4 style="color:#238636;">GET Request (Loading the form)</h4>
+                <p>When you visit <code>/predictdata</code>, the browser sends a GET request. Flask responds by rendering the blank form (<code>home.html</code>) so you can enter data. No processing happens yet.</p>
+                <div class="code-block">
+<span class="keyword">if</span> request.method == <span class="string">'GET'</span>:
+    <span class="keyword">return</span> <span class="func">render_template</span>(<span class="string">'home.html'</span>)</div>
+            </div>
+            <div class="card">
+                <h4 style="color:#d32f2f;">POST Request (Making a prediction)</h4>
+                <p>When you click "Predict", the form sends a POST request with all 24 field values. Flask extracts them, runs the pipeline, and returns the result rendered back into the same form.</p>
+                <div class="code-block">
+<span class="keyword">if</span> request.method == <span class="string">'POST'</span>:
+    data = <span class="func">CustomData</span>(...)
+    results = pipeline.<span class="func">predict</span>(df)
+    <span class="keyword">return</span> <span class="func">render_template</span>(<span class="string">'home.html'</span>,
+                           results=text)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== SECTION 7: DEPLOYMENT ==================== -->
+    <div class="section">
+        <div class="section-title">
+            <span class="section-num">7</span>
+            Deployment on Render
+        </div>
+
+        <p><a href="https://render.com" style="color:#d32f2f;">Render</a> is a cloud platform that hosts web applications. When you push code to GitHub, Render can automatically build and run it &mdash; no server management needed.</p>
+
+        <div class="grid-3" style="margin-top:16px;">
+            <div class="card">
+                <h4>Procfile</h4>
+                <p>Tells Render how to start the app:</p>
+                <div class="code-block">
+<span class="string">web: gunicorn application:app</span></div>
+                <p style="font-size:0.85rem;color:#8b949e;margin-top:8px;"><code>gunicorn</code> is a production-grade WSGI server, far more robust than Flask's built-in server.</p>
+            </div>
+            <div class="card">
+                <h4>build.sh</h4>
+                <p>Runs during deployment to install dependencies:</p>
+                <div class="code-block">
+<span class="comment">#!/bin/bash</span>
+pip install -r requirements.txt</div>
+            </div>
+            <div class="card">
+                <h4>runtime.txt</h4>
+                <p>Specifies the Python version:</p>
+                <div class="code-block">
+<span class="string">python-3.11.8</span></div>
+            </div>
+        </div>
+
+        <div class="code-block">
+<span class="comment"># application.py:59-65 - Production configuration</span>
+<span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:
+    <span class="comment"># Get port from environment variable (Render sets this)</span>
+    port = <span class="func">int</span>(os.environ.<span class="func">get</span>(<span class="string">'PORT'</span>, <span class="num">5000</span>))
+    <span class="comment"># Debug only in development</span>
+    debug_mode = os.environ.<span class="func">get</span>(<span class="string">'FLASK_ENV'</span>, <span class="string">'development'</span>) == <span class="string">'development'</span>
+    app.<span class="func">run</span>(host=<span class="string">"0.0.0.0"</span>, port=port, debug=debug_mode)
+</div>
+
+        <div class="highlight-box green">
+            <strong>Live Demo:</strong> <a href="https://uci-credit-card-default-prediction.onrender.com" style="color:#238636;">https://uci-credit-card-default-prediction.onrender.com</a> &mdash; Try entering different values and see how the model responds!
+        </div>
+    </div>
+
+    <!-- ==================== SECTION 8: END-TO-END PIPELINE ==================== -->
+    <div class="section">
+        <div class="section-title">
+            <span class="section-num">8</span>
+            End-to-End Pipeline Summary
+        </div>
+
+        <p>Here is the complete journey of this project, from raw data to a live prediction:</p>
+
+        <svg viewBox="0 0 900 520" style="width:100%;max-width:880px;margin:20px auto;display:block;">
+            <!-- Row 1 -->
+            <rect x="10" y="10" width="200" height="60" rx="8" fill="#161b22" stroke="#d32f2f" stroke-width="2"/>
+            <text x="110" y="32" fill="#d32f2f" font-size="11" font-weight="bold" text-anchor="middle">Part 1</text>
+            <text x="110" y="50" fill="#f0f6fc" font-size="11" text-anchor="middle">Raw Data (30K rows)</text>
+            <line x1="210" y1="40" x2="260" y2="40" stroke="#d32f2f" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+            <rect x="260" y="10" width="200" height="60" rx="8" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+            <text x="360" y="32" fill="#d32f2f" font-size="11" font-weight="bold" text-anchor="middle">Part 1</text>
+            <text x="360" y="50" fill="#f0f6fc" font-size="11" text-anchor="middle">EDA &amp; Visualization</text>
+            <line x1="460" y1="40" x2="510" y2="40" stroke="#d32f2f" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+            <rect x="510" y="10" width="200" height="60" rx="8" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+            <text x="610" y="32" fill="#d32f2f" font-size="11" font-weight="bold" text-anchor="middle">Part 2</text>
+            <text x="610" y="50" fill="#f0f6fc" font-size="11" text-anchor="middle">Data Cleaning</text>
+            <line x1="710" y1="40" x2="760" y2="40" stroke="#d32f2f" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+            <!-- Row 2 -->
+            <rect x="710" y="90" width="180" height="60" rx="8" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+            <text x="800" y="112" fill="#d32f2f" font-size="11" font-weight="bold" text-anchor="middle">Part 2</text>
+            <text x="800" y="130" fill="#f0f6fc" font-size="11" text-anchor="middle">Feature Engineering</text>
+            <line x1="800" y1="150" x2="800" y2="180" stroke="#d32f2f" stroke-width="2" marker-end="url(#arrowhead)"/>
+            <line x1="760" y1="40" x2="760" y2="90" stroke="#30363d" stroke-width="1"/>
+            <line x1="760" y1="90" x2="710" y2="90" stroke="#30363d" stroke-width="1"/>
+
+            <rect x="510" y="180" width="200" height="60" rx="8" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+            <text x="610" y="202" fill="#d32f2f" font-size="11" font-weight="bold" text-anchor="middle">Part 2</text>
+            <text x="610" y="220" fill="#f0f6fc" font-size="11" text-anchor="middle">Train/Test Split</text>
+            <line x1="800" y1="190" x2="760" y2="190" stroke="#d32f2f" stroke-width="2" stroke-dasharray="4"/>
+            <line x1="710" y1="210" x2="660" y2="210" stroke="#d32f2f" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+            <rect x="510" y="260" width="200" height="60" rx="8" fill="#161b22" stroke="#d32f2f" stroke-width="2"/>
+            <text x="610" y="282" fill="#d32f2f" font-size="11" font-weight="bold" text-anchor="middle">Part 3</text>
+            <text x="610" y="300" fill="#f0f6fc" font-size="11" text-anchor="middle">Model Training (6 models)</text>
+            <line x1="610" y1="240" x2="610" y2="260" stroke="#d32f2f" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+            <rect x="260" y="260" width="200" height="60" rx="8" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+            <text x="360" y="282" fill="#d32f2f" font-size="11" font-weight="bold" text-anchor="middle">Part 4</text>
+            <text x="360" y="300" fill="#f0f6fc" font-size="11" text-anchor="middle">Hyperparameter Tuning</text>
+            <line x1="510" y1="290" x2="460" y2="290" stroke="#d32f2f" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+            <rect x="260" y="340" width="200" height="60" rx="8" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+            <text x="360" y="362" fill="#d32f2f" font-size="11" font-weight="bold" text-anchor="middle">Part 5</text>
+            <text x="360" y="380" fill="#f0f6fc" font-size="11" text-anchor="middle">Model Evaluation</text>
+            <line x1="360" y1="320" x2="360" y2="340" stroke="#d32f2f" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+            <rect x="260" y="420" width="200" height="60" rx="8" fill="#161b22" stroke="#d32f2f" stroke-width="2"/>
+            <text x="360" y="442" fill="#d32f2f" font-size="11" font-weight="bold" text-anchor="middle">Part 5</text>
+            <text x="360" y="460" fill="#f0f6fc" font-size="11" text-anchor="middle">Save Artifacts (.pkl)</text>
+            <line x1="360" y1="400" x2="360" y2="420" stroke="#d32f2f" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+            <rect x="10" y="340" width="200" height="60" rx="8" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+            <text x="110" y="362" fill="#d32f2f" font-size="11" font-weight="bold" text-anchor="middle">Part 5</text>
+            <text x="110" y="380" fill="#f0f6fc" font-size="11" text-anchor="middle">Best Model: XGBoost</text>
+            <line x1="260" y1="370" x2="210" y2="370" stroke="#d32f2f" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+            <!-- Deployment row -->
+            <rect x="10" y="420" width="200" height="60" rx="8" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+            <text x="110" y="442" fill="#d32f2f" font-size="11" font-weight="bold" text-anchor="middle">Part 5</text>
+            <text x="110" y="460" fill="#f0f6fc" font-size="11" text-anchor="middle">Flask Web App</text>
+            <line x1="210" y1="450" x2="260" y2="450" stroke="#238636" stroke-width="2"/>
+
+            <rect x="510" y="420" width="200" height="60" rx="8" fill="#161b22" stroke="#238636" stroke-width="2"/>
+            <text x="610" y="442" fill="#238636" font-size="11" font-weight="bold" text-anchor="middle">Part 5</text>
+            <text x="610" y="460" fill="#f0f6fc" font-size="11" text-anchor="middle">Deploy on Render</text>
+            <line x1="460" y1="450" x2="510" y2="450" stroke="#238636" stroke-width="2" marker-end="url(#greenarrow)"/>
+
+            <!-- Live badge -->
+            <rect x="740" y="410" width="150" height="80" rx="10" fill="rgba(35,134,54,0.15)" stroke="#238636" stroke-width="2"/>
+            <text x="815" y="440" fill="#238636" font-size="12" font-weight="bold" text-anchor="middle">LIVE!</text>
+            <text x="815" y="460" fill="#7ee787" font-size="9" text-anchor="middle">uci-credit-card-</text>
+            <text x="815" y="473" fill="#7ee787" font-size="9" text-anchor="middle">default-prediction</text>
+            <text x="815" y="486" fill="#7ee787" font-size="9" text-anchor="middle">.onrender.com</text>
+            <line x1="710" y1="450" x2="740" y2="450" stroke="#238636" stroke-width="2" marker-end="url(#greenarrow)"/>
+        </svg>
+    </div>
+
+    <!-- ==================== SECTION 9: STRENGTHS ==================== -->
+    <div class="section">
+        <div class="section-title">
+            <span class="section-num">9</span>
+            Project Strengths
+        </div>
+
+        <div class="pro-con">
+            <div class="highlight-box green pro" style="margin:0;">
+                <h4 style="color:#238636;margin-bottom:12px;">What Was Done Well</h4>
+                <ul style="list-style:none;padding:0;">
+                    <li style="margin-bottom:10px;"><strong>&#10003; Modular Code Architecture</strong> &mdash; Separate components for data ingestion, transformation, and training. Each piece is testable and replaceable independently.</li>
+                    <li style="margin-bottom:10px;"><strong>&#10003; No Data Leakage</strong> &mdash; Train/test split happens before any preprocessing. The preprocessor is fit ONLY on training data, preventing information from the test set leaking in.</li>
+                    <li style="margin-bottom:10px;"><strong>&#10003; Multiple Model Comparison</strong> &mdash; We didn't just pick one algorithm. We tested 6 models with GridSearchCV and let the data decide the winner.</li>
+                    <li style="margin-bottom:10px;"><strong>&#10003; Automated Hyperparameter Tuning</strong> &mdash; GridSearchCV systematically explores parameter combinations instead of manual guessing.</li>
+                    <li style="margin-bottom:10px;"><strong>&#10003; Production-Ready Deployment</strong> &mdash; The app runs on Render with proper WSGI server (gunicorn), environment variable handling, and debug mode toggling.</li>
+                    <li style="margin-bottom:10px;"><strong>&#10003; Custom Exception Handling</strong> &mdash; Custom exceptions and logging throughout the pipeline make debugging production issues straightforward.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== SECTION 10: IMPROVEMENTS ==================== -->
+    <div class="section">
+        <div class="section-title">
+            <span class="section-num">10</span>
+            Potential Improvements
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Improvement</th>
+                    <th>Why It Helps</th>
+                    <th>Expected Impact</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Try LightGBM</td>
+                    <td>Faster training, often matches or beats XGBoost on tabular data</td>
+                    <td>+0.5-1% ROC-AUC</td>
+                </tr>
+                <tr>
+                    <td>Larger hyperparameter grid</td>
+                    <td>We used small grids (2 options per param). A wider search finds better combos.</td>
+                    <td>+0.5-2% ROC-AUC</td>
+                </tr>
+                <tr>
+                    <td>Feature selection</td>
+                    <td>41 features (24 + 17 engineered). Removing irrelevant features reduces noise.</td>
+                    <td>Same accuracy, faster predictions</td>
+                </tr>
+                <tr>
+                    <td>K-Fold Cross-Validation (k=5+)</td>
+                    <td>Our current 2-fold CV has high variance. More folds give more reliable estimates.</td>
+                    <td>More reliable scores</td>
+                </tr>
+                <tr>
+                    <td>Probability Calibration</td>
+                    <td>Currently we output binary 0/1. Calibration would give confidence scores (e.g., 73% chance of default).</td>
+                    <td>Better decision-making</td>
+                </tr>
+                <tr>
+                    <td>A/B Testing</td>
+                    <td>Serve both XGBoost and a challenger model. Compare real-world performance.</td>
+                    <td>Continuous improvement</td>
+                </tr>
+                <tr>
+                    <td>SMOTE / Class Balancing</td>
+                    <td>Our 22% default rate means imbalance. Oversampling defaulters could improve recall.</td>
+                    <td>+3-5% recall on defaults</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ==================== SECTION 11: LESSONS LEARNED ==================== -->
+    <div class="section">
+        <div class="section-title">
+            <span class="section-num">11</span>
+            Lessons Learned
+        </div>
+
+        <div class="grid-2">
+            <div class="card">
+                <h4>&#128161; Data Quality &gt; Model Complexity</h4>
+                <p>The 17 engineered features improved performance by ~15%. Feature engineering &mdash; understanding the domain and creating meaningful features &mdash; had a bigger impact than switching algorithms.</p>
+            </div>
+            <div class="card">
+                <h4>&#128161; Choose the Right Metric First</h4>
+                <p>Accuracy would have told us our model is "82% good." But with imbalanced data, ROC-AUC revealed the true picture: 0.814 &mdash; good but not great. The metric choice changes the entire story.</p>
+            </div>
+            <div class="card">
+                <h4>&#128161; Separation is Non-Negotiable</h4>
+                <p>Train/test split BEFORE any preprocessing. Fitting the scaler on the entire dataset would leak future information and give falsely optimistic scores. This is the #1 beginner mistake.</p>
+            </div>
+            <div class="card">
+                <h4>&#128161; Simpler Models Have Their Place</h4>
+                <p>Logistic Regression was only ~5% worse. In production, you might prefer it for its speed, interpretability, and ease of deployment. Always consider the tradeoffs.</p>
+            </div>
+            <div class="card">
+                <h4>&#128161; Deployment is a Skill Too</h4>
+                <p>Getting a model from a Jupyter notebook to a live web app involves Flask, WSGI servers, environment variables, and cloud platforms. It's a completely different skill set from ML.</p>
+            </div>
+            <div class="card">
+                <h4>&#128161; Modular Code Saves Time</h4>
+                <p>The component-based architecture (DataIngestion &rarr; DataTransformation &rarr; ModelTrainer) meant we could change one part without breaking others. This is essential for real ML projects.</p>
+            </div>
+        </div>
+
+        <div class="highlight-box" style="margin-top:24px;">
+            <strong style="font-size:1.1rem;">The Big Picture:</strong><br><br>
+            Machine learning isn't just about algorithms. It's a full engineering discipline that spans data collection, cleaning, feature engineering, model training, evaluation, deployment, and monitoring. This project demonstrates that entire pipeline &mdash; from a CSV file to a live web application that anyone in the world can use. The technical skills you've learned here transfer directly to professional ML engineering roles.
+        </div>
+    </div>
+
+    <!-- ==================== FOOTER NAVIGATION ==================== -->
+    <div class="nav-footer">
+        <a href="explanation_part4.html">&larr; Part 4: Model Training &amp; Hyperparameter Tuning</a>
+        <span style="color:#484f58;padding:10px;">Part 5 of 5</span>
+    </div>
+
+    <div style="text-align:center;margin:40px 0 20px;color:#484f58;font-size:0.85rem;">
+        <p>Credit Card Default Prediction &mdash; ML Project Explanation Guide</p>
+        <p style="margin-top:6px;">
+            <a href="explanation_part1.html" style="color:#d32f2f;text-decoration:none;">Part 1</a> &middot;
+            <a href="explanation_part2.html" style="color:#d32f2f;text-decoration:none;">Part 2</a> &middot;
+            <a href="explanation_part3.html" style="color:#d32f2f;text-decoration:none;">Part 3</a> &middot;
+            <a href="explanation_part4.html" style="color:#d32f2f;text-decoration:none;">Part 4</a> &middot;
+            <a href="explanation_part5.html" style="color:#d32f2f;text-decoration:none;">Part 5</a>
+        </p>
+        <p style="margin-top:10px;"><a href="https://uci-credit-card-default-prediction.onrender.com" style="color:#238636;text-decoration:none;">Live Demo</a> &middot; <a href="https://github.com/coderved63/UCI_CREDIT_CARD_DEFAULT_PREDICTION" style="color:#8b949e;text-decoration:none;">GitHub</a></p>
+    </div>
+</div>
+
+</body>
+</html>

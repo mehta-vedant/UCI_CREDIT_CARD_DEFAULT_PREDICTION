@@ -2,145 +2,666 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Credit Card Default Prediction</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CreditGuard AI — Prediction</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0a0e1a;
+            --surface: #111827;
+            --surface-2: #1a2236;
+            --border: #1e293b;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.3);
+            --green: #22c55e;
+            --green-glow: rgba(34, 197, 94, 0.2);
+            --amber: #f59e0b;
+            --red: #ef4444;
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 900px;
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Ambient ── */
+        .ambient {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+        }
+        .ambient::before {
+            content: '';
+            position: absolute;
+            width: 500px; height: 500px;
+            top: -150px; right: -100px;
+            background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        /* ── Nav ── */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            padding: 16px 40px;
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(10,14,26,0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+        .logo {
+            display: flex; align-items: center; gap: 10px;
+            font-weight: 700; font-size: 1.15rem;
+            text-decoration: none; color: var(--text);
+        }
+        .logo-icon {
+            width: 34px; height: 34px;
+            background: linear-gradient(135deg, var(--accent), #818cf8);
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
+        }
+        .nav-links { display: flex; gap: 8px; align-items: center; }
+        .nav-links a {
+            color: var(--text-dim); text-decoration: none;
+            font-size: 0.85rem; font-weight: 500;
+            padding: 8px 16px; border-radius: 8px; transition: all 0.2s;
+        }
+        .nav-links a:hover { color: var(--text); background: var(--surface-2); }
+
+        /* ── Main ── */
+        main {
+            position: relative; z-index: 1;
+            padding-top: 100px;
+            max-width: 720px;
             margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
+            padding-left: 20px; padding-right: 20px;
+            padding-bottom: 80px;
         }
-        .container {
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+
+        /* ── Back Link ── */
+        .back {
+            display: inline-flex; align-items: center; gap: 6px;
+            color: var(--text-dim); text-decoration: none;
+            font-size: 0.85rem; font-weight: 500;
+            margin-bottom: 24px; transition: color 0.2s;
         }
-        h1 {
-            text-align: center;
-            color: #333;
+        .back:hover { color: var(--accent); }
+
+        /* ── Page Header ── */
+        .page-header { margin-bottom: 32px; }
+        .page-header h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 8px; }
+        .page-header p { color: var(--text-dim); font-size: 0.9rem; }
+
+        /* ── Progress Bar ── */
+        .progress-container { margin-bottom: 36px; }
+        .progress-steps {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 12px;
         }
-        .section {
-            margin: 20px 0;
-            padding: 15px;
-            background: #fafafa;
-            border: 1px solid #ddd;
+        .progress-step {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.82rem; font-weight: 500; color: var(--text-dim);
+            transition: color 0.3s;
+        }
+        .progress-step.active { color: var(--accent); }
+        .progress-step.done { color: var(--green); }
+        .step-dot {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 600;
+            transition: all 0.3s;
+        }
+        .progress-step.active .step-dot {
+            border-color: var(--accent);
+            background: rgba(99,102,241,0.15);
+            color: var(--accent);
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+        .progress-step.done .step-dot {
+            border-color: var(--green);
+            background: rgba(34,197,94,0.15);
+            color: var(--green);
+        }
+        .progress-line {
+            height: 2px; flex: 1; margin: 0 12px;
+            background: var(--border); border-radius: 2px;
+            position: relative; overflow: hidden;
+        }
+        .progress-line-fill {
+            position: absolute; top: 0; left: 0; bottom: 0;
+            background: var(--accent);
+            border-radius: 2px;
+            transition: width 0.4s ease;
+        }
+        .progress-bar {
+            height: 3px; background: var(--border); border-radius: 3px; overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%; background: linear-gradient(90deg, var(--accent), #818cf8);
+            border-radius: 3px;
+            transition: width 0.4s ease;
+        }
+
+        /* ── Form Card ── */
+        .form-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+        .form-step {
+            display: none;
+            padding: 32px;
+            animation: fadeIn 0.3s ease;
+        }
+        .form-step.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .step-title {
+            font-size: 1.1rem; font-weight: 600; margin-bottom: 4px;
+        }
+        .step-desc {
+            color: var(--text-dim); font-size: 0.82rem; margin-bottom: 28px;
+        }
+
+        /* ── Fields ── */
+        .field-row { display: grid; gap: 16px; margin-bottom: 20px; }
+        .field-row.cols-2 { grid-template-columns: 1fr 1fr; }
+        .field-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .field-group { display: flex; flex-direction: column; }
+        .field-label {
+            font-size: 0.8rem; font-weight: 500; color: var(--text-dim);
+            margin-bottom: 8px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .tooltip-trigger {
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 0.6rem; color: var(--text-dim);
+            cursor: help; position: relative;
+            font-weight: 700;
+        }
+        .tooltip-trigger:hover .tooltip-content {
+            opacity: 1; visibility: visible; transform: translateY(0);
+        }
+        .tooltip-content {
+            position: absolute;
+            bottom: calc(100% + 8px); left: 50%;
+            transform: translateX(-50%) translateY(4px);
+            background: var(--surface-2);
+            border: 1px solid var(--border);
             border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: var(--text-dim);
+            width: 220px;
+            line-height: 1.5;
+            opacity: 0; visibility: hidden;
+            transition: all 0.2s;
+            z-index: 10;
+            pointer-events: none;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
         }
-        .section h3 {
-            margin-top: 0;
-            color: #444;
+        .tooltip-content::after {
+            content: '';
+            position: absolute;
+            top: 100%; left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: var(--border);
         }
-        .form-row {
-            display: flex;
-            gap: 15px;
-        }
-        .form-group {
-            flex: 1;
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 6px;
-            color: #555;
-        }
-        input, select {
+
+        input[type="number"], select {
             width: 100%;
-            padding: 10px;
-            font-size: 15px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
+            padding: 11px 14px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            outline: none;
         }
-        input[type="submit"] {
-            background-color: #4CAF50;
-            color: white;
-            font-weight: bold;
-            border: none;
-            padding: 12px;
-            cursor: pointer;
-            width: 100%;
-            border-radius: 6px;
+        input[type="number"]:focus, select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
         }
-        input[type="submit"]:hover {
-            background-color: #45a049;
+        select { cursor: pointer; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8'%3E%3Cpath d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 32px;
         }
-        .result {
-            margin-top: 20px;
-            padding: 15px;
-            font-size: 18px;
-            font-weight: bold;
-            text-align: center;
-            border-radius: 6px;
-        }
-        .result.positive {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .result.negative {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .back-btn {
-            display: inline-block;
-            background-color: #6c757d;
-            color: white;
-            padding: 10px 20px;
-            text-decoration: none;
-            border-radius: 5px;
+        input::placeholder { color: #475569; }
+
+        .payment-legend {
+            display: flex; gap: 16px; flex-wrap: wrap;
             margin-bottom: 20px;
+            padding: 12px 16px;
+            background: rgba(99,102,241,0.06);
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(99,102,241,0.1);
         }
-        .back-btn:hover {
-            background-color: #545b62;
+        .legend-item {
+            font-size: 0.75rem; color: var(--text-dim);
+            display: flex; align-items: center; gap: 4px;
+        }
+        .legend-dot {
+            width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0;
+        }
+
+        /* ── Buttons ── */
+        .form-actions {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 32px;
+            border-top: 1px solid var(--border);
+            background: rgba(17,24,39,0.5);
+        }
+        .btn {
+            padding: 11px 28px;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.25s;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-next {
+            background: linear-gradient(135deg, var(--accent), #818cf8);
+            color: #fff;
+            box-shadow: 0 4px 16px var(--accent-glow);
+        }
+        .btn-next:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px var(--accent-glow);
+        }
+        .btn-back {
+            background: var(--surface-2);
+            color: var(--text-dim);
+            border: 1px solid var(--border);
+        }
+        .btn-back:hover { border-color: var(--accent); color: var(--text); }
+        .btn-submit {
+            background: linear-gradient(135deg, var(--green), #16a34a);
+            color: #fff;
+            box-shadow: 0 4px 16px var(--green-glow);
+            width: 100%;
+            justify-content: center;
+            padding: 14px;
+            font-size: 0.95rem;
+        }
+        .btn-submit:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px var(--green-glow);
+        }
+        .btn-placeholder { visibility: hidden; }
+
+        /* ── Results ── */
+        .results-container {
+            margin-top: 32px;
+            animation: slideUp 0.5s ease;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+        .result-header {
+            padding: 28px 32px;
+            text-align: center;
+        }
+        .result-header h2 { font-size: 1.2rem; margin-bottom: 4px; }
+        .result-header .result-subtitle {
+            color: var(--text-dim); font-size: 0.85rem;
+        }
+
+        /* Gauge */
+        .gauge-container {
+            display: flex; justify-content: center;
+            padding: 0 0 16px;
+        }
+        .gauge-svg { width: 200px; height: 120px; }
+        .gauge-bg { fill: none; stroke: var(--border); stroke-width: 12; stroke-linecap: round; }
+        .gauge-fill {
+            fill: none; stroke-width: 12; stroke-linecap: round;
+            transition: stroke-dashoffset 1.2s ease, stroke 0.3s;
+        }
+        .gauge-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 2rem; font-weight: 800;
+            fill: var(--text);
+        }
+        .gauge-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.65rem; fill: var(--text-dim);
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        /* Risk Badge */
+        .risk-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 18px;
+            border-radius: 50px;
+            font-size: 0.82rem; font-weight: 600;
+            margin-top: 12px;
+        }
+        .risk-badge.low {
+            background: rgba(34,197,94,0.12);
+            color: #4ade80;
+            border: 1px solid rgba(34,197,94,0.2);
+        }
+        .risk-badge.moderate {
+            background: rgba(245,158,11,0.12);
+            color: #fbbf24;
+            border: 1px solid rgba(245,158,11,0.2);
+        }
+        .risk-badge.high {
+            background: rgba(239,68,68,0.12);
+            color: #f87171;
+            border: 1px solid rgba(239,68,68,0.2);
+        }
+        .risk-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+        }
+        .risk-badge.low .risk-dot { background: #4ade80; box-shadow: 0 0 8px rgba(34,197,94,0.5); }
+        .risk-badge.moderate .risk-dot { background: #fbbf24; box-shadow: 0 0 8px rgba(245,158,11,0.5); }
+        .risk-badge.high .risk-dot { background: #f87171; box-shadow: 0 0 8px rgba(239,68,68,0.5); }
+
+        /* Input Summary */
+        .input-summary {
+            border-top: 1px solid var(--border);
+            padding: 20px 32px;
+        }
+        .summary-title {
+            font-size: 0.78rem; font-weight: 600;
+            color: var(--text-dim); text-transform: uppercase;
+            letter-spacing: 0.5px; margin-bottom: 14px;
+        }
+        .summary-grid {
+            display: grid; grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+        .summary-item {
+            background: var(--bg);
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .summary-item-label {
+            font-size: 0.7rem; color: var(--text-dim); margin-bottom: 2px;
+        }
+        .summary-item-value {
+            font-size: 0.88rem; font-weight: 600;
+        }
+
+        /* Recommendation */
+        .recommendation {
+            border-top: 1px solid var(--border);
+            padding: 20px 32px;
+        }
+        .rec-box {
+            padding: 16px 20px;
+            border-radius: var(--radius-sm);
+            font-size: 0.88rem;
+            line-height: 1.7;
+        }
+        .rec-box.low { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.15); color: #a7f3d0; }
+        .rec-box.moderate { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.15); color: #fde68a; }
+        .rec-box.high { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.15); color: #fecaca; }
+
+        /* New Prediction */
+        .new-prediction {
+            text-align: center; margin-top: 20px;
+        }
+        .btn-reset {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            padding: 12px 32px;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-reset:hover { border-color: var(--accent); color: var(--text); }
+
+        @media (max-width: 640px) {
+            nav { padding: 12px 20px; }
+            .nav-links { display: none; }
+            main { padding-top: 80px; }
+            .field-row.cols-2, .field-row.cols-3 { grid-template-columns: 1fr; }
+            .form-step { padding: 24px 20px; }
+            .form-actions { padding: 16px 20px; }
+            .summary-grid { grid-template-columns: 1fr; }
+            .input-summary, .recommendation { padding: 16px 20px; }
+            .result-header { padding: 24px 20px; }
+            .progress-step span { display: none; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <a href="/" class="back-btn">← Back to Home</a>
-        <h1>🏦 Credit Card Default Prediction</h1>
 
-        <form action="{{ url_for('predict_datapoint') }}" method="post">
+<div class="ambient"></div>
 
-            <!-- Personal Information -->
-            <div class="section">
-                <h3>Personal Information</h3>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="LIMIT_BAL">Credit Limit (NT Dollar)</label>
-                        <input type="number" name="LIMIT_BAL" id="LIMIT_BAL" required>
+<nav>
+    <a href="/" class="logo">
+        <div class="logo-icon">🛡</div>
+        CreditGuard AI
+    </a>
+    <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/predictdata">Prediction</a>
+    </div>
+</nav>
+
+<main>
+    <a href="/" class="back">← Back to Dashboard</a>
+    <div class="page-header">
+        <h1>Credit Default Risk Assessment</h1>
+        <p>Complete the form below to analyze default probability using our trained XGBoost model.</p>
+    </div>
+
+    {% if results %}
+    {# ══════ RESULTS VIEW ══════ #}
+    <div class="results-container">
+        <div class="result-card">
+            <div class="result-header">
+                <h2>Prediction Result</h2>
+                <p class="result-subtitle">XGBoost Model Analysis</p>
+
+                <div class="gauge-container">
+                    <svg class="gauge-svg" viewBox="0 0 200 120">
+                        <path class="gauge-bg" d="M 20 100 A 80 80 0 0 1 180 100"/>
+                        <path class="gauge-fill" id="gaugeArc"
+                              d="M 20 100 A 80 80 0 0 1 180 100"
+                              stroke="{{ '#ef4444' if risk_color == 'high' else '#f59e0b' if risk_color == 'moderate' else '#22c55e' }}"
+                              stroke-dasharray="251.2"
+                              stroke-dashoffset="251.2"/>
+                        <text class="gauge-text" x="100" y="90" text-anchor="middle">{{ probability }}%</text>
+                        <text class="gauge-label" x="100" y="108" text-anchor="middle">Default Probability</text>
+                    </svg>
+                </div>
+
+                <div class="risk-badge {{ risk_color }}">
+                    <span class="risk-dot"></span>
+                    {{ risk_level }}
+                </div>
+            </div>
+
+            <div class="input-summary">
+                <div class="summary-title">Input Summary</div>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="summary-item-label">Credit Limit</div>
+                        <div class="summary-item-value">NT${{ "{:,}".format(limit_bal|int) }}</div>
                     </div>
-                    <div class="form-group">
-                        <label for="AGE">Age</label>
-                        <input type="number" name="AGE" id="AGE" min="18" max="100" required>
+                    <div class="summary-item">
+                        <div class="summary-item-label">Age</div>
+                        <div class="summary-item-value">{{ age }}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-item-label">Gender</div>
+                        <div class="summary-item-value">{{ "Male" if sex == "1" else "Female" }}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-item-label">Education</div>
+                        <div class="summary-item-value">{{ { "1": "Graduate School", "2": "University", "3": "High School", "4": "Others" }.get(education, education) }}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-item-label">Marital Status</div>
+                        <div class="summary-item-value">{{ { "1": "Married", "2": "Single", "3": "Others" }.get(marriage, marriage) }}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-item-label">Latest Bill</div>
+                        <div class="summary-item-value">NT${{ "{:,}".format(BILL_AMT1|int) }}</div>
                     </div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="SEX">Gender</label>
+            </div>
+
+            <div class="recommendation">
+                <div class="summary-title">Recommendation</div>
+                <div class="rec-box {{ risk_color }}">
+                    {% if risk_color == 'low' %}
+                        This profile shows strong payment discipline with a low probability of default ({{ probability }}%). The applicant demonstrates consistent payment behavior and manageable credit utilization. Standard credit approval is recommended with regular monitoring.
+                    {% elif risk_color == 'moderate' %}
+                        This profile shows moderate risk indicators with a {{ probability }}% default probability. Some payment delays or high utilization patterns detected. Consider conditional approval with enhanced monitoring, lower credit limits, or requiring additional documentation.
+                    {% else %}
+                        This profile shows high-risk indicators with a {{ probability }}% default probability. Significant payment delinquency or dangerous credit utilization patterns detected. Recommend thorough manual review, credit counseling referral, or application decline with counter-offers.
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="new-prediction">
+            <button class="btn-reset" onclick="window.location.reload()">Run New Prediction</button>
+        </div>
+    </div>
+
+    <script>
+        setTimeout(() => {
+            const arc = document.getElementById('gaugeArc');
+            const pct = {{ probability }} / 100;
+            const total = 251.2;
+            arc.style.strokeDashoffset = total - (total * pct);
+        }, 100);
+    </script>
+
+    {% else %}
+    {# ══════ FORM VIEW ══════ #}
+    <div class="progress-container">
+        <div class="progress-steps">
+            <div class="progress-step active" id="ps1">
+                <div class="step-dot">1</div>
+                <span>Personal</span>
+            </div>
+            <div class="progress-line"><div class="progress-line-fill" id="pl1" style="width:0%"></div></div>
+            <div class="progress-step" id="ps2">
+                <div class="step-dot">2</div>
+                <span>Payments</span>
+            </div>
+            <div class="progress-line"><div class="progress-line-fill" id="pl2" style="width:0%"></div></div>
+            <div class="progress-step" id="ps3">
+                <div class="step-dot">3</div>
+                <span>Amounts</span>
+            </div>
+        </div>
+        <div class="progress-bar"><div class="progress-bar-fill" id="pbar" style="width:33%"></div></div>
+    </div>
+
+    <form action="{{ url_for('predict_datapoint') }}" method="post" id="predForm">
+
+        <!-- Step 1: Personal Info -->
+        <div class="form-card">
+            <div class="form-step active" id="step1">
+                <div class="step-title">Personal Information</div>
+                <div class="step-desc">Basic demographic and credit profile details.</div>
+
+                <div class="field-row cols-2">
+                    <div class="field-group">
+                        <label class="field-label" for="LIMIT_BAL">
+                            Credit Limit (NT$)
+                            <span class="tooltip-trigger">?
+                                <span class="tooltip-content">The approved credit limit in New Taiwan Dollars. Higher limits typically indicate better creditworthiness but also higher exposure.</span>
+                            </span>
+                        </label>
+                        <input type="number" name="LIMIT_BAL" id="LIMIT_BAL" placeholder="e.g. 200000" min="10000" max="1000000" step="10000" required>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label" for="AGE">
+                            Age
+                            <span class="tooltip-trigger">?
+                                <span class="tooltip-content">Applicant age in years. Range in training data: 21-79. Age may correlate with financial stability and credit experience.</span>
+                            </span>
+                        </label>
+                        <input type="number" name="AGE" id="AGE" placeholder="e.g. 35" min="18" max="100" required>
+                    </div>
+                </div>
+
+                <div class="field-row cols-3">
+                    <div class="field-group">
+                        <label class="field-label" for="SEX">
+                            Gender
+                            <span class="tooltip-trigger">?
+                                <span class="tooltip-content">1 = Male, 2 = Female. Used as a demographic feature. The model learns gender-specific payment patterns from training data.</span>
+                            </span>
+                        </label>
                         <select name="SEX" id="SEX" required>
-                            <option value="">Select Gender</option>
+                            <option value="">Select</option>
                             <option value="1">Male</option>
                             <option value="2">Female</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="EDUCATION">Education</label>
+                    <div class="field-group">
+                        <label class="field-label" for="EDUCATION">
+                            Education
+                            <span class="tooltip-trigger">?
+                                <span class="tooltip-content">1 = Graduate School, 2 = University, 3 = High School, 4 = Others. Education level may correlate with income stability and financial literacy.</span>
+                            </span>
+                        </label>
                         <select name="EDUCATION" id="EDUCATION" required>
-                            <option value="">Select Education</option>
+                            <option value="">Select</option>
                             <option value="1">Graduate School</option>
                             <option value="2">University</option>
                             <option value="3">High School</option>
                             <option value="4">Others</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="MARRIAGE">Marital Status</label>
+                    <div class="field-group">
+                        <label class="field-label" for="MARRIAGE">
+                            Marital Status
+                            <span class="tooltip-trigger">?
+                                <span class="tooltip-content">1 = Married, 2 = Single, 3 = Others. Marital status affects household income dynamics and financial obligations.</span>
+                            </span>
+                        </label>
                         <select name="MARRIAGE" id="MARRIAGE" required>
-                            <option value="">Select Status</option>
+                            <option value="">Select</option>
                             <option value="1">Married</option>
                             <option value="2">Single</option>
                             <option value="3">Others</option>
@@ -149,199 +670,284 @@
                 </div>
             </div>
 
-            <!-- Payment Status History -->
-            <div class="section">
-                <h3>Payment Status History</h3>
-                <p style="font-size: 12px; color: #666;">-1 = Paid before due | 0 = Paid on time | 1+ = Delay months</p>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="PAY_0">Sep 2005 Payment</label>
+            <!-- Step 2: Payment Status -->
+            <div class="form-step" id="step2">
+                <div class="step-title">Payment Status History</div>
+                <div class="step-desc">Repayment behavior over the last 6 months (most recent first).</div>
+
+                <div class="payment-legend">
+                    <div class="legend-item"><span class="legend-dot" style="background:#22c55e"></span> Paid early</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span> On time</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span> 1-2 months late</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> 3+ months late</div>
+                </div>
+
+                <div class="field-row cols-3">
+                    <div class="field-group">
+                        <label class="field-label" for="PAY_0">
+                            Sep 2005
+                            <span class="tooltip-trigger">?
+                                <span class="tooltip-content">Most recent month. -2 = No consumption, -1 = Paid early, 0 = On time, 1 = 1 month late, 2 = 2 months late, etc. This is the strongest predictor of default.</span>
+                            </span>
+                        </label>
                         <select name="PAY_0" id="PAY_0" required>
-                            <option value="">Select Payment Status</option>
+                            <option value="">Select</option>
                             <option value="-2">No consumption</option>
-                            <option value="-1">Paid in full</option>
-                            <option value="0">Use of revolving credit</option>
-                            <option value="1">Payment delay 1 month</option>
-                            <option value="2">Payment delay 2 months</option>
-                            <option value="3">Payment delay 3 months</option>
-                            <option value="4">Payment delay 4 months</option>
-                            <option value="5">Payment delay 5 months</option>
-                            <option value="6">Payment delay 6 months</option>
-                            <option value="7">Payment delay 7 months</option>
-                            <option value="8">Payment delay 8+ months</option>
+                            <option value="-1">Paid early</option>
+                            <option value="0">Paid on time</option>
+                            <option value="1">1 month late</option>
+                            <option value="2">2 months late</option>
+                            <option value="3">3 months late</option>
+                            <option value="4">4 months late</option>
+                            <option value="5">5 months late</option>
+                            <option value="6">6 months late</option>
+                            <option value="7">7 months late</option>
+                            <option value="8">8+ months late</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="PAY_2">Aug 2005 Payment</label>
+                    <div class="field-group">
+                        <label class="field-label" for="PAY_2">
+                            Aug 2005
+                            <span class="tooltip-trigger">?
+                                <span class="tooltip-content">Second most recent month. Same scale as PAY_0. Shows whether recent payment behavior is improving or worsening.</span>
+                            </span>
+                        </label>
                         <select name="PAY_2" id="PAY_2" required>
-                            <option value="">Select Payment Status</option>
+                            <option value="">Select</option>
                             <option value="-2">No consumption</option>
-                            <option value="-1">Paid in full</option>
-                            <option value="0">Use of revolving credit</option>
-                            <option value="1">Payment delay 1 month</option>
-                            <option value="2">Payment delay 2 months</option>
-                            <option value="3">Payment delay 3 months</option>
-                            <option value="4">Payment delay 4 months</option>
-                            <option value="5">Payment delay 5 months</option>
-                            <option value="6">Payment delay 6 months</option>
-                            <option value="7">Payment delay 7 months</option>
-                            <option value="8">Payment delay 8+ months</option>
+                            <option value="-1">Paid early</option>
+                            <option value="0">Paid on time</option>
+                            <option value="1">1 month late</option>
+                            <option value="2">2 months late</option>
+                            <option value="3">3 months late</option>
+                            <option value="4">4 months late</option>
+                            <option value="5">5 months late</option>
+                            <option value="6">6 months late</option>
+                            <option value="7">7 months late</option>
+                            <option value="8">8+ months late</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="PAY_3">Jul 2005 Payment</label>
+                    <div class="field-group">
+                        <label class="field-label" for="PAY_3">
+                            Jul 2005
+                            <span class="tooltip-trigger">?
+                                <span class="tooltip-content">Third month back. Helps detect sustained delinquency patterns vs one-time misses.</span>
+                            </span>
+                        </label>
                         <select name="PAY_3" id="PAY_3" required>
-                            <option value="">Select Payment Status</option>
+                            <option value="">Select</option>
                             <option value="-2">No consumption</option>
-                            <option value="-1">Paid in full</option>
-                            <option value="0">Use of revolving credit</option>
-                            <option value="1">Payment delay 1 month</option>
-                            <option value="2">Payment delay 2 months</option>
-                            <option value="3">Payment delay 3 months</option>
-                            <option value="4">Payment delay 4 months</option>
-                            <option value="5">Payment delay 5 months</option>
-                            <option value="6">Payment delay 6 months</option>
-                            <option value="7">Payment delay 7 months</option>
-                            <option value="8">Payment delay 8+ months</option>
+                            <option value="-1">Paid early</option>
+                            <option value="0">Paid on time</option>
+                            <option value="1">1 month late</option>
+                            <option value="2">2 months late</option>
+                            <option value="3">3 months late</option>
+                            <option value="4">4 months late</option>
+                            <option value="5">5 months late</option>
+                            <option value="6">6 months late</option>
+                            <option value="7">7 months late</option>
+                            <option value="8">8+ months late</option>
                         </select>
                     </div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="PAY_4">Jun 2005 Payment</label>
+
+                <div class="field-row cols-3">
+                    <div class="field-group">
+                        <label class="field-label" for="PAY_4">
+                            Jun 2005
+                            <span class="tooltip-trigger">?
+                                <span class="tooltip-content">Fourth month back. Part of the 6-month behavioral window the model analyzes.</span>
+                            </span>
+                        </label>
                         <select name="PAY_4" id="PAY_4" required>
-                            <option value="">Select Payment Status</option>
+                            <option value="">Select</option>
                             <option value="-2">No consumption</option>
-                            <option value="-1">Paid in full</option>
-                            <option value="0">Use of revolving credit</option>
-                            <option value="1">Payment delay 1 month</option>
-                            <option value="2">Payment delay 2 months</option>
-                            <option value="3">Payment delay 3 months</option>
-                            <option value="4">Payment delay 4 months</option>
-                            <option value="5">Payment delay 5 months</option>
-                            <option value="6">Payment delay 6 months</option>
-                            <option value="7">Payment delay 7 months</option>
-                            <option value="8">Payment delay 8+ months</option>
+                            <option value="-1">Paid early</option>
+                            <option value="0">Paid on time</option>
+                            <option value="1">1 month late</option>
+                            <option value="2">2 months late</option>
+                            <option value="3">3 months late</option>
+                            <option value="4">4 months late</option>
+                            <option value="5">5 months late</option>
+                            <option value="6">6 months late</option>
+                            <option value="7">7 months late</option>
+                            <option value="8">8+ months late</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="PAY_5">May 2005 Payment</label>
+                    <div class="field-group">
+                        <label class="field-label" for="PAY_5">
+                            May 2005
+                            <span class="tooltip-trigger">?
+                                <span class="tooltip-content">Fifth month back. Older payment status carries less weight but contributes to trend analysis.</span>
+                            </span>
+                        </label>
                         <select name="PAY_5" id="PAY_5" required>
-                            <option value="">Select Payment Status</option>
+                            <option value="">Select</option>
                             <option value="-2">No consumption</option>
-                            <option value="-1">Paid in full</option>
-                            <option value="0">Use of revolving credit</option>
-                            <option value="1">Payment delay 1 month</option>
-                            <option value="2">Payment delay 2 months</option>
-                            <option value="3">Payment delay 3 months</option>
-                            <option value="4">Payment delay 4 months</option>
-                            <option value="5">Payment delay 5 months</option>
-                            <option value="6">Payment delay 6 months</option>
-                            <option value="7">Payment delay 7 months</option>
-                            <option value="8">Payment delay 8+ months</option>
+                            <option value="-1">Paid early</option>
+                            <option value="0">Paid on time</option>
+                            <option value="1">1 month late</option>
+                            <option value="2">2 months late</option>
+                            <option value="3">3 months late</option>
+                            <option value="4">4 months late</option>
+                            <option value="5">5 months late</option>
+                            <option value="6">6 months late</option>
+                            <option value="7">7 months late</option>
+                            <option value="8">8+ months late</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="PAY_6">Apr 2005 Payment</label>
+                    <div class="field-group">
+                        <label class="field-label" for="PAY_6">
+                            Apr 2005
+                            <span class="tooltip-trigger">?
+                                <span class="tooltip-content">Oldest month in the 6-month window. Establishes the baseline payment behavior for trend comparison.</span>
+                            </span>
+                        </label>
                         <select name="PAY_6" id="PAY_6" required>
-                            <option value="">Select Payment Status</option>
+                            <option value="">Select</option>
                             <option value="-2">No consumption</option>
-                            <option value="-1">Paid in full</option>
-                            <option value="0">Use of revolving credit</option>
-                            <option value="1">Payment delay 1 month</option>
-                            <option value="2">Payment delay 2 months</option>
-                            <option value="3">Payment delay 3 months</option>
-                            <option value="4">Payment delay 4 months</option>
-                            <option value="5">Payment delay 5 months</option>
-                            <option value="6">Payment delay 6 months</option>
-                            <option value="7">Payment delay 7 months</option>
-                            <option value="8">Payment delay 8+ months</option>
+                            <option value="-1">Paid early</option>
+                            <option value="0">Paid on time</option>
+                            <option value="1">1 month late</option>
+                            <option value="2">2 months late</option>
+                            <option value="3">3 months late</option>
+                            <option value="4">4 months late</option>
+                            <option value="5">5 months late</option>
+                            <option value="6">6 months late</option>
+                            <option value="7">7 months late</option>
+                            <option value="8">8+ months late</option>
                         </select>
                     </div>
                 </div>
             </div>
 
-            <!-- Bill Amounts -->
-            <div class="section">
-                <h3>Bill Statement Amounts</h3>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="BILL_AMT1">Sep 2005 Bill</label>
-                        <input type="number" name="BILL_AMT1" id="BILL_AMT1" required>
+            <!-- Step 3: Amounts -->
+            <div class="form-step" id="step3">
+                <div class="step-title">Bill & Payment Amounts</div>
+                <div class="step-desc">Statement amounts and actual payments over the last 6 months.</div>
+
+                <div class="field-row cols-3">
+                    <div class="field-group">
+                        <label class="field-label" for="BILL_AMT1">
+                            Sep Bill (NT$)
+                            <span class="tooltip-trigger">?
+                                <span class="tooltip-content">Statement balance for the most recent month. High bills relative to credit limit indicate high utilization — a key risk factor.</span>
+                            </span>
+                        </label>
+                        <input type="number" name="BILL_AMT1" id="BILL_AMT1" placeholder="e.g. 50000" required>
                     </div>
-                    <div class="form-group">
-                        <label for="BILL_AMT2">Aug 2005 Bill</label>
-                        <input type="number" name="BILL_AMT2" id="BILL_AMT2" required>
+                    <div class="field-group">
+                        <label class="field-label" for="BILL_AMT2">
+                            Aug Bill (NT$)
+                            <span class="tooltip-trigger">?
+                                <span class="tooltip-content">Statement balance for the second most recent month. Compare with PAY_AMT2 to assess payment-to-bill ratio.</span>
+                            </span>
+                        </label>
+                        <input type="number" name="BILL_AMT2" id="BILL_AMT2" placeholder="e.g. 45000" required>
                     </div>
-                    <div class="form-group">
-                        <label for="BILL_AMT3">Jul 2005 Bill</label>
-                        <input type="number" name="BILL_AMT3" id="BILL_AMT3" required>
+                    <div class="field-group">
+                        <label class="field-label" for="BILL_AMT3">
+                            Jul Bill (NT$)
+                            <span class="tooltip-trigger">?
+                                <span class="tooltip-content">Statement balance three months back. Trend in bill amounts shows spending trajectory.</span>
+                            </span>
+                        </label>
+                        <input type="number" name="BILL_AMT3" id="BILL_AMT3" placeholder="e.g. 48000" required>
                     </div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="BILL_AMT4">Jun 2005 Bill</label>
-                        <input type="number" name="BILL_AMT4" id="BILL_AMT4" required>
+
+                <div class="field-row cols-3">
+                    <div class="field-group">
+                        <label class="field-label" for="BILL_AMT4">Jun Bill (NT$)</label>
+                        <input type="number" name="BILL_AMT4" id="BILL_AMT4" placeholder="e.g. 42000" required>
                     </div>
-                    <div class="form-group">
-                        <label for="BILL_AMT5">May 2005 Bill</label>
-                        <input type="number" name="BILL_AMT5" id="BILL_AMT5" required>
+                    <div class="field-group">
+                        <label class="field-label" for="BILL_AMT5">May Bill (NT$)</label>
+                        <input type="number" name="BILL_AMT5" id="BILL_AMT5" placeholder="e.g. 38000" required>
                     </div>
-                    <div class="form-group">
-                        <label for="BILL_AMT6">Apr 2005 Bill</label>
-                        <input type="number" name="BILL_AMT6" id="BILL_AMT6" required>
+                    <div class="field-group">
+                        <label class="field-label" for="BILL_AMT6">Apr Bill (NT$)</label>
+                        <input type="number" name="BILL_AMT6" id="BILL_AMT6" placeholder="e.g. 35000" required>
+                    </div>
+                </div>
+
+                <div class="field-row cols-3">
+                    <div class="field-group">
+                        <label class="field-label" for="PAY_AMT1">
+                            Sep Payment (NT$)
+                            <span class="tooltip-trigger">?
+                                <span class="tooltip-content">Amount actually paid in the most recent month. If PAY_AMT1 &lt; BILL_AMT1, only partial payment was made — a warning sign.</span>
+                            </span>
+                        </label>
+                        <input type="number" name="PAY_AMT1" id="PAY_AMT1" placeholder="e.g. 30000" min="0" required>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label" for="PAY_AMT2">Aug Payment (NT$)</label>
+                        <input type="number" name="PAY_AMT2" id="PAY_AMT2" placeholder="e.g. 28000" min="0" required>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label" for="PAY_AMT3">Jul Payment (NT$)</label>
+                        <input type="number" name="PAY_AMT3" id="PAY_AMT3" placeholder="e.g. 30000" min="0" required>
+                    </div>
+                </div>
+
+                <div class="field-row cols-3">
+                    <div class="field-group">
+                        <label class="field-label" for="PAY_AMT4">Jun Payment (NT$)</label>
+                        <input type="number" name="PAY_AMT4" id="PAY_AMT4" placeholder="e.g. 25000" min="0" required>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label" for="PAY_AMT5">May Payment (NT$)</label>
+                        <input type="number" name="PAY_AMT5" id="PAY_AMT5" placeholder="e.g. 22000" min="0" required>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label" for="PAY_AMT6">Apr Payment (NT$)</label>
+                        <input type="number" name="PAY_AMT6" id="PAY_AMT6" placeholder="e.g. 20000" min="0" required>
                     </div>
                 </div>
             </div>
-
-            <!-- Payment Amounts -->
-            <div class="section">
-                <h3>Previous Payment Amounts</h3>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="PAY_AMT1">Sep 2005 Payment</label>
-                        <input type="number" name="PAY_AMT1" id="PAY_AMT1" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="PAY_AMT2">Aug 2005 Payment</label>
-                        <input type="number" name="PAY_AMT2" id="PAY_AMT2" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="PAY_AMT3">Jul 2005 Payment</label>
-                        <input type="number" name="PAY_AMT3" id="PAY_AMT3" required>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="PAY_AMT4">Jun 2005 Payment</label>
-                        <input type="number" name="PAY_AMT4" id="PAY_AMT4" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="PAY_AMT5">May 2005 Payment</label>
-                        <input type="number" name="PAY_AMT5" id="PAY_AMT5" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="PAY_AMT6">Apr 2005 Payment</label>
-                        <input type="number" name="PAY_AMT6" id="PAY_AMT6" required>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <input type="submit" value="🔍 Predict Default Risk">
-            </div>
-        </form>
-
-        {% if results %}
-        <div class="result {{ 'negative' if 'Will Default' in results else 'positive' }}">
-            <h2>Prediction Result: {{ results }}</h2>
-            {% if 'Will Default' in results %}
-                <p>⚠️ High risk of credit card default. Consider reviewing credit terms.</p>
-            {% else %}
-                <p>✅ Low risk of credit card default. Good payment behavior expected.</p>
-            {% endif %}
         </div>
-        {% endif %}
-    </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions" id="formActions">
+            <button type="button" class="btn btn-back" id="btnBack" onclick="changeStep(-1)" style="visibility:hidden">← Back</button>
+            <button type="button" class="btn btn-next" id="btnNext" onclick="changeStep(1)">Continue →</button>
+            <button type="submit" class="btn btn-submit" id="btnSubmit" style="display:none">Analyze Default Risk →</button>
+        </div>
+    </form>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 3;
+
+        function changeStep(dir) {
+            const newStep = currentStep + dir;
+            if (newStep < 1 || newStep > totalSteps) return;
+            document.getElementById('step' + currentStep).classList.remove('active');
+            currentStep = newStep;
+            document.getElementById('step' + currentStep).classList.add('active');
+            updateUI();
+        }
+
+        function updateUI() {
+            // Progress steps
+            for (let i = 1; i <= totalSteps; i++) {
+                const ps = document.getElementById('ps' + i);
+                ps.classList.remove('active', 'done');
+                if (i === currentStep) ps.classList.add('active');
+                else if (i < currentStep) ps.classList.add('done');
+            }
+            // Progress lines
+            document.getElementById('pl1').style.width = currentStep >= 2 ? '100%' : '0%';
+            document.getElementById('pl2').style.width = currentStep >= 3 ? '100%' : '0%';
+            // Progress bar
+            document.getElementById('pbar').style.width = ((currentStep / totalSteps) * 100) + '%';
+            // Buttons
+            document.getElementById('btnBack').style.visibility = currentStep === 1 ? 'hidden' : 'visible';
+            document.getElementById('btnNext').style.display = currentStep === totalSteps ? 'none' : 'inline-flex';
+            document.getElementById('btnSubmit').style.display = currentStep === totalSteps ? 'inline-flex' : 'none';
+        }
+    </script>
+    {% endif %}
 </body>
 </html>

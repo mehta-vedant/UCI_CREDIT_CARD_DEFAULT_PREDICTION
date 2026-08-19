@@ -1,0 +1,2237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part 4: All ML Models Explained + GridSearchCV | UCI Credit Card Fraud Detection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --orange-primary: #ff6d00;
+            --orange-dark: #e65100;
+            --orange-light: #ff9e40;
+            --orange-glow: rgba(255, 109, 0, 0.3);
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f2e;
+            --bg-card-alt: #151b2b;
+            --text-primary: #f0f0f0;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: #2d3748;
+            --border-glow: rgba(255, 109, 0, 0.2);
+            --code-bg: #0d1117;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --purple: #8b5cf6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ==================== NAVIGATION ==================== */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(10, 14, 23, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.8rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--orange-primary), var(--orange-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 0.3rem;
+            list-style: none;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--orange-primary);
+            background: rgba(255, 109, 0, 0.1);
+        }
+
+        .nav-links a.active {
+            color: var(--orange-primary);
+            background: rgba(255, 109, 0, 0.15);
+            border: 1px solid rgba(255, 109, 0, 0.3);
+        }
+
+        /* ==================== HERO ==================== */
+        .hero {
+            min-height: 50vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #ff6d00, #e65100);
+            text-align: center;
+            padding: 8rem 2rem 4rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.3;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero .part-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.4rem 1.2rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 900;
+            color: white;
+            margin-bottom: 1rem;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .hero p {
+            font-size: 1.15rem;
+            color: rgba(255, 255, 255, 0.9);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* ==================== CONTAINER ==================== */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* ==================== SECTION ==================== */
+        .section {
+            padding: 4rem 0;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .section-header h2 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 0.8rem;
+            background: linear-gradient(135deg, var(--orange-primary), var(--orange-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .section-header p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* ==================== CARDS ==================== */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            border-color: var(--border-glow);
+            box-shadow: 0 0 30px var(--orange-glow);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        .card-header h3 {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .card-header .model-tag {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        /* ==================== TYPOGRAPHY ==================== */
+        h4 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--orange-primary);
+            margin: 1.5rem 0 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        h5 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 1rem 0 0.5rem;
+        }
+
+        p, li {
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        .highlight-text {
+            color: var(--orange-light);
+            font-weight: 600;
+        }
+
+        /* ==================== ANALOGY BOX ==================== */
+        .analogy-box {
+            background: linear-gradient(135deg, rgba(255, 109, 0, 0.08), rgba(255, 109, 0, 0.03));
+            border: 1px solid rgba(255, 109, 0, 0.2);
+            border-left: 4px solid var(--orange-primary);
+            border-radius: 10px;
+            padding: 1.2rem 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .analogy-box .analogy-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--orange-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .analogy-box p {
+            color: var(--text-primary);
+            font-style: italic;
+        }
+
+        /* ==================== STRENGTHS/WEAKNESSES ==================== */
+        .pros-cons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .pros, .cons {
+            padding: 1.2rem;
+            border-radius: 10px;
+        }
+
+        .pros {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .cons {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .pros h5 { color: var(--success); }
+        .cons h5 { color: var(--danger); }
+
+        .pros li { color: #86efac; }
+        .cons li { color: #fca5a5; }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        ul li {
+            padding: 0.3rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .pros ul li::before {
+            content: '+';
+            position: absolute;
+            left: 0;
+            color: var(--success);
+            font-weight: 700;
+        }
+
+        .cons ul li::before {
+            content: '-';
+            position: absolute;
+            left: 0;
+            color: var(--danger);
+            font-weight: 700;
+        }
+
+        /* ==================== TABLES ==================== */
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 1rem 0;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            background: var(--bg-secondary);
+            color: var(--orange-primary);
+            padding: 0.8rem 1rem;
+            text-align: left;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--orange-primary);
+        }
+
+        tbody td {
+            padding: 0.7rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 109, 0, 0.04);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* ==================== CODE BLOCKS ==================== */
+        .code-block {
+            background: var(--code-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.2rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .code-block .code-label {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.8rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--orange-primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .code-block pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            line-height: 1.6;
+            color: #e6edf3;
+            white-space: pre;
+        }
+
+        .code-block .comment { color: #6a737d; }
+        .code-block .keyword { color: #ff7b72; }
+        .code-block .string { color: #a5d6ff; }
+        .code-block .function { color: #d2a8ff; }
+        .code-block .number { color: #79c0ff; }
+        .code-block .variable { color: #ffa657; }
+
+        /* ==================== CSS DIAGRAMS ==================== */
+        .diagram-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 0;
+            overflow-x: auto;
+        }
+
+        .diagram {
+            position: relative;
+        }
+
+        /* --- Decision Tree Diagram --- */
+        .tree-diagram {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+        }
+
+        .tree-node {
+            background: var(--bg-card);
+            border: 2px solid var(--orange-primary);
+            border-radius: 10px;
+            padding: 0.6rem 1.2rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: center;
+            position: relative;
+            min-width: 120px;
+        }
+
+        .tree-node.root {
+            background: linear-gradient(135deg, var(--orange-primary), var(--orange-dark));
+            color: white;
+        }
+
+        .tree-node.leaf {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        .tree-node.leaf-red {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .tree-level {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            margin-top: 0.5rem;
+        }
+
+        .tree-connector {
+            width: 2px;
+            height: 20px;
+            background: var(--border-color);
+            margin: 0 auto;
+        }
+
+        .tree-branch-labels {
+            display: flex;
+            gap: 6rem;
+            justify-content: center;
+            margin-top: -0.3rem;
+        }
+
+        .tree-branch-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* --- Ensemble Diagram --- */
+        .ensemble-diagram {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-end;
+        }
+
+        .ensemble-tree {
+            width: 70px;
+            background: var(--bg-card-alt);
+            border: 2px solid var(--orange-primary);
+            border-radius: 8px;
+            padding: 0.5rem;
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--text-primary);
+            position: relative;
+        }
+
+        .ensemble-tree.winner {
+            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.1);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .ensemble-tree .tree-icon {
+            font-size: 1.4rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .ensemble-arrow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+        }
+
+        .ensemble-arrow .arrow-line {
+            width: 2px;
+            height: 30px;
+            background: var(--border-color);
+        }
+
+        /* --- Sequential Boosting Diagram --- */
+        .boosting-diagram {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .boosting-stage {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: var(--bg-card-alt);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.7rem 1.2rem;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .boosting-stage .stage-num {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .boosting-stage .stage-text {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+
+        .boosting-stage .stage-text strong {
+            color: var(--text-primary);
+        }
+
+        .boost-connector {
+            width: 2px;
+            height: 12px;
+            background: var(--orange-primary);
+        }
+
+        /* --- Logistic Curve Diagram --- */
+        .logistic-curve {
+            position: relative;
+            width: 350px;
+            height: 200px;
+        }
+
+        .curve-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* --- GridSearchCV Diagram --- */
+        .grid-diagram {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 0.5rem;
+            max-width: 400px;
+        }
+
+        .grid-cell {
+            width: 60px;
+            height: 40px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .grid-cell.tested {
+            background: rgba(255, 109, 0, 0.2);
+            border: 1px solid var(--orange-primary);
+            color: var(--orange-primary);
+        }
+
+        .grid-cell.best {
+            background: rgba(16, 185, 129, 0.2);
+            border: 2px solid var(--success);
+            color: var(--success);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+        }
+
+        .grid-cell.pending {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+        }
+
+        /* --- CV Fold Diagram --- */
+        .cv-folds {
+            display: flex;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .cv-fold {
+            flex: 1;
+            height: 50px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .cv-fold.train {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: var(--info);
+        }
+
+        .cv-fold.val {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--danger);
+        }
+
+        /* --- Ranking Bar --- */
+        .ranking-bar {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 0.5rem 0;
+        }
+
+        .ranking-label {
+            width: 140px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .ranking-track {
+            flex: 1;
+            height: 35px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .ranking-fill {
+            height: 100%;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 0.8rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: white;
+            transition: width 1s ease;
+        }
+
+        .ranking-fill.winner {
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+        }
+
+        /* --- Badges --- */
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .badge-orange {
+            background: rgba(255, 109, 0, 0.15);
+            color: var(--orange-primary);
+            border: 1px solid rgba(255, 109, 0, 0.3);
+        }
+
+        .badge-green {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-blue {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--info);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .badge-purple {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--purple);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .badge-red {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .badge-yellow {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        /* ==================== COMPARISON ==================== */
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .comparison-card {
+            background: var(--bg-card-alt);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .comparison-card h4 {
+            justify-content: center;
+        }
+
+        /* ==================== MISC ==================== */
+        .info-box {
+            background: rgba(59, 130, 246, 0.08);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 10px;
+            padding: 1rem 1.2rem;
+            margin: 1rem 0;
+        }
+
+        .info-box p {
+            color: var(--info);
+            font-size: 0.9rem;
+        }
+
+        .warning-box {
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 10px;
+            padding: 1rem 1.2rem;
+            margin: 1rem 0;
+        }
+
+        .warning-box p {
+            color: var(--warning);
+            font-size: 0.9rem;
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+            margin: 2rem 0;
+        }
+
+        .model-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--orange-primary), var(--orange-dark));
+            color: white;
+            flex-shrink: 0;
+        }
+
+        /* ==================== FOOTER NAVIGATION ==================== */
+        .footer-nav {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            padding: 3rem 0;
+            margin-top: 3rem;
+        }
+
+        .footer-nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.8rem 1.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .footer-nav a:hover {
+            border-color: var(--orange-primary);
+            color: var(--orange-primary);
+            box-shadow: 0 0 20px var(--orange-glow);
+        }
+
+        .footer-nav a .arrow {
+            font-size: 1.2rem;
+        }
+
+        /* ==================== RESPONSIVE ==================== */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2rem; }
+            .nav-links { display: none; }
+            .pros-cons { grid-template-columns: 1fr; }
+            .comparison-grid { grid-template-columns: 1fr; }
+            .footer-nav .container { flex-direction: column; gap: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ==================== NAVIGATION ==================== -->
+<nav class="navbar">
+    <div class="nav-brand">UCI Credit Card Fraud</div>
+    <ul class="nav-links">
+        <li><a href="explanation_part1.html">Part 1</a></li>
+        <li><a href="explanation_part2.html">Part 2</a></li>
+        <li><a href="explanation_part3.html">Part 3</a></li>
+        <li><a href="explanation_part4.html" class="active">Part 4</a></li>
+        <li><a href="explanation_part5.html">Part 5</a></li>
+    </ul>
+</nav>
+
+<!-- ==================== HERO ==================== -->
+<header class="hero">
+    <div class="hero-content">
+        <span class="part-badge">Part 4 of 5</span>
+        <h1>All ML Models Explained +<br>GridSearchCV Hyperparameter Tuning</h1>
+        <p>Deep dive into every classification model we trained, understand how ensemble methods dominate tabular data, and master the art of hyperparameter optimization with GridSearchCV.</p>
+    </div>
+</header>
+
+<!-- ==================== MAIN CONTENT ==================== -->
+<main class="container">
+
+    <!-- ============================================ -->
+    <!-- SECTION 1: WHAT IS A CLASSIFICATION MODEL    -->
+    <!-- ============================================ -->
+    <section class="section">
+        <div class="section-header">
+            <h2>What is a Classification Model?</h2>
+            <p>Before diving into each algorithm, let's understand what classification means in machine learning.</p>
+        </div>
+
+        <div class="card">
+            <h4>The Core Idea</h4>
+            <p>
+                Imagine you're a <span class="highlight-text">bank manager</span> deciding whether a loan applicant will repay or default. Over the years, you've seen thousands of applicants: their income, credit history, employment status, and whether they eventually repaid. After studying these patterns, you develop an intuition: <em>"People with high income, long credit history, and stable jobs tend to repay."</em>
+            </p>
+            <p style="margin-top:0.8rem;">
+                A <span class="highlight-text">classification model</span> does exactly this — but mathematically. It learns patterns from <strong>historical labeled data</strong> (past outcomes) and uses those patterns to <strong>predict the category</strong> of new, unseen data points.
+            </p>
+
+            <div class="analogy-box">
+                <div class="analogy-label">Real-World Analogy</div>
+                <p>"Classification is like a doctor learning from thousands of patient cases. After seeing enough patients — their symptoms, test results, and diagnoses — the doctor can look at a new patient and say: <em>'Based on what I've seen before, this pattern looks like Disease A, not Disease B.'</em> The more cases the doctor has studied, the more accurate their diagnosis becomes."</p>
+            </div>
+
+            <p style="margin-top:1rem;">In our project, the classification task is: <span class="highlight-text">Given a credit card transaction, predict whether it is fraudulent (1) or legitimate (0).</span></p>
+
+            <div class="divider"></div>
+
+            <h4>Types of Classification Models</h4>
+            <div class="comparison-grid">
+                <div class="comparison-card">
+                    <h4>Linear Models</h4>
+                    <p style="color:var(--text-secondary);font-size:0.9rem;margin-top:0.5rem;">
+                        Draw a straight line (or hyperplane) to separate classes. Simple, fast, interpretable.<br>
+                        <span class="badge badge-blue">Logistic Regression</span>
+                    </p>
+                </div>
+                <div class="comparison-card">
+                    <h4>Tree-Based Models</h4>
+                    <p style="color:var(--text-secondary);font-size:0.9rem;margin-top:0.5rem;">
+                        Create decision trees by splitting data on feature thresholds. Non-linear, interpretable.<br>
+                        <span class="badge badge-green">Decision Trees</span>
+                    </p>
+                </div>
+                <div class="comparison-card">
+                    <h4>Ensemble Models</h4>
+                    <p style="color:var(--text-secondary);font-size:0.9rem;margin-top:0.5rem;">
+                        Combine multiple models for better predictions. Best performance on tabular data.<br>
+                        <span class="badge badge-orange">Random Forest, XGBoost, CatBoost, Gradient Boosting, AdaBoost</span>
+                    </p>
+                </div>
+                <div class="comparison-card">
+                    <h4>Distance-Based Models</h4>
+                    <p style="color:var(--text-secondary);font-size:0.9rem;margin-top:0.5rem;">
+                        Classify by similarity to neighboring data points. Simple but slow on large datasets.<br>
+                        <span class="badge badge-purple">KNN, SVM</span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <p>Our project uses <strong>1 Linear model</strong> (Logistic Regression) and <strong>5 Ensemble models</strong> (Random Forest, Gradient Boosting, XGBoost, CatBoost, AdaBoost). Ensemble methods consistently outperform others on tabular/structured data.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- SECTION 2: ALL 6 MODELS EXPLAINED            -->
+    <!-- ============================================ -->
+    <section class="section">
+        <div class="section-header">
+            <h2>All 6 Models Explained In Depth</h2>
+            <p>Each model is explored with how it works, its visual structure, strengths, weaknesses, and why we included it.</p>
+        </div>
+
+        <!-- ============ MODEL 1: LOGISTIC REGRESSION ============ -->
+        <div class="card" id="logistic-regression">
+            <div class="card-header">
+                <div class="model-number">1</div>
+                <div>
+                    <h3>Logistic Regression</h3>
+                    <span class="badge badge-blue">Linear Model</span>
+                    <span class="badge badge-yellow">Baseline</span>
+                </div>
+            </div>
+
+            <h4>How It Works</h4>
+            <p>
+                Logistic Regression is the <span class="highlight-text">simplest and most interpretable</span> classification algorithm. Despite its name, it's used for classification, not regression. It works by fitting a linear equation to the input features and then passing the output through a <strong>sigmoid function</strong> that squashes the result into a probability between 0 and 1.
+            </p>
+            <p style="margin-top:0.8rem;">
+                Mathematically, it computes: <code>z = w₁x₁ + w₂x₂ + ... + wₙxₙ + b</code> (a weighted sum), then applies the <span class="highlight-text">sigmoid function</span>: <code>P(y=1) = 1 / (1 + e⁻ᶻ)</code>. If P(y=1) &gt; 0.5, predict fraud; otherwise, predict legitimate.
+            </p>
+
+            <div class="analogy-box">
+                <div class="analogy-label">Real-World Analogy</div>
+                <p>"Imagine you're trying to separate marbles into two groups on a table using a straight stick. You slide the stick around until it best separates the red marbles from the blue ones. The stick is the <strong>decision boundary</strong>. Logistic Regression does the same thing, but in high-dimensional space — it draws the best straight line (or hyperplane) to separate fraud from legitimate transactions based on their features like amount, time, and V1-V28."</p>
+            </div>
+
+            <!-- Visual: Sigmoid Curve -->
+            <h4>Visual: The Sigmoid Function</h4>
+            <div class="diagram-container">
+                <svg class="curve-svg" viewBox="0 0 400 220" style="max-width:420px;">
+                    <!-- Grid lines -->
+                    <line x1="50" y1="10" x2="50" y2="200" stroke="#2d3748" stroke-width="1"/>
+                    <line x1="50" y1="200" x2="380" y2="200" stroke="#2d3748" stroke-width="1"/>
+                    <!-- Y axis labels -->
+                    <text x="15" y="200" fill="#6b7280" font-size="11">0.0</text>
+                    <text x="15" y="108" fill="#6b7280" font-size="11">0.5</text>
+                    <text x="15" y="15" fill="#6b7280" font-size="11">1.0</text>
+                    <!-- Decision boundary -->
+                    <line x1="215" y1="200" x2="215" y2="10" stroke="#f59e0b" stroke-width="1" stroke-dasharray="5,5"/>
+                    <text x="200" y="215" fill="#f59e0b" font-size="10">threshold=0.5</text>
+                    <!-- Sigmoid curve -->
+                    <path d="M 60,198 C 100,195 140,185 170,165 C 190,148 205,120 215,105 C 225,88 240,55 270,32 C 300,18 340,12 370,10" fill="none" stroke="#ff6d00" stroke-width="3" stroke-linecap="round"/>
+                    <!-- Labels -->
+                    <text x="70" y="180" fill="#ef4444" font-size="11" font-weight="600">Legitimate (0)</text>
+                    <text x="280" y="30" fill="#10b981" font-size="11" font-weight="600">Fraud (1)</text>
+                    <text x="160" y="95" fill="#ff6d00" font-size="10" font-style="italic">Sigmoid curve</text>
+                </svg>
+            </div>
+
+            <p>The sigmoid curve transforms any real number into a probability. Values far left → near 0 (legitimate), values far right → near 1 (fraud). The 0.5 threshold decides the classification.</p>
+
+            <!-- Strengths & Weaknesses -->
+            <div class="pros-cons">
+                <div class="pros">
+                    <h5>Strengths</h5>
+                    <ul>
+                        <li>Extremely fast to train</li>
+                        <li>Fully interpretable — each feature has a weight</li>
+                        <li>Outputs calibrated probabilities</li>
+                        <li>Works well as a baseline</li>
+                        <li>Less prone to overfitting with regularization</li>
+                        <li>Excellent when classes are linearly separable</li>
+                    </ul>
+                </div>
+                <div class="cons">
+                    <h5>Weaknesses</h5>
+                    <ul>
+                        <li>Cannot capture non-linear relationships</li>
+                        <li>Assumes features are independent</li>
+                        <li>Sensitive to outliers</li>
+                        <li>Requires feature scaling</li>
+                        <li>Poor performance on complex patterns</li>
+                        <li>Struggles with high-dimensional interactions</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Hyperparameters -->
+            <h4>Hyperparameters We Tuned</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Values Tested</th>
+                            <th>What It Controls</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>C</code></td>
+                            <td><span class="badge badge-orange">0.1, 1.0, 10.0</span></td>
+                            <td><strong>Regularization strength.</strong> Smaller C = stronger regularization (simpler model, less overfitting). Larger C = weaker regularization (complex model, risk of overfitting). It's the inverse of lambda (λ).</td>
+                        </tr>
+                        <tr>
+                            <td><code>penalty</code></td>
+                            <td><span class="badge badge-blue">l2</span></td>
+                            <td><strong>L2 (Ridge) regularization.</strong> Adds squared magnitude of coefficients to the loss function. Shrinks coefficients toward zero without eliminating them. Prevents any single feature from dominating.</td>
+                        </tr>
+                        <tr>
+                            <td><code>solver</code></td>
+                            <td><span class="badge badge-green">liblinear</span></td>
+                            <td><strong>Optimization algorithm.</strong> Liblinear uses coordinate descent. Best for small datasets and L2 penalty. Handles one-vs-rest for binary classification efficiently.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Why We Included It</h4>
+            <p>
+                Logistic Regression serves as the <span class="highlight-text">baseline model</span>. Every ML project needs a simple benchmark — if complex models can't significantly outperform a straight line, something is wrong with the data or approach. It also provides <strong>interpretable coefficients</strong> showing which features drive fraud detection.
+            </p>
+
+            <div class="code-block">
+                <span class="code-label">model_trainer.py</span>
+<pre><span class="comment"># Model definition</span>
+<span class="string">"Logistic Regression"</span>: LogisticRegression(
+    random_state=<span class="number">42</span>,
+    max_iter=<span class="number">500</span>
+),
+
+<span class="comment"># Hyperparameter grid</span>
+<span class="string">"Logistic Regression"</span>: {
+    <span class="string">'C'</span>: [<span class="number">0.1</span>, <span class="number">1.0</span>, <span class="number">10.0</span>],
+    <span class="string">'penalty'</span>: [<span class="string">'l2'</span>],
+    <span class="string">'solver'</span>: [<span class="string">'liblinear'</span>]
+}</pre>
+            </div>
+        </div>
+
+        <!-- ============ MODEL 2: RANDOM FOREST ============ -->
+        <div class="card" id="random-forest">
+            <div class="card-header">
+                <div class="model-number">2</div>
+                <div>
+                    <h3>Random Forest Classifier</h3>
+                    <span class="badge badge-orange">Ensemble (Bagging)</span>
+                    <span class="badge badge-green">3rd Place</span>
+                </div>
+            </div>
+
+            <h4>How It Works</h4>
+            <p>
+                Random Forest is a <span class="highlight-text">bagging ensemble</span> method that builds hundreds of decision trees, each trained on a different random subset of the data and features. When making a prediction, <strong>every tree votes</strong> and the majority wins. This is called <strong>bootstrap aggregation (bagging)</strong>.
+            </p>
+            <p style="margin-top:0.8rem;">
+                Each tree in the forest is intentionally different: it sees a random sample of rows (with replacement) and at each split, considers only a random subset of features. This <strong>randomness prevents overfitting</strong> — individual trees may overfit to noise, but when hundreds vote together, the noise cancels out and only the true signal remains.
+            </p>
+
+            <div class="analogy-box">
+                <div class="analogy-label">Real-World Analogy</div>
+                <p>"Imagine you need to estimate the population of a city. Instead of asking one statistician, you ask <strong>100 independent experts</strong>, each of whom only has access to partial information. Some may overestimate, some may underestimate, but when you average their answers, the errors cancel out and you get a remarkably accurate estimate. That's Random Forest — many imperfect trees voting together produce a strong prediction."</p>
+            </div>
+
+            <!-- Visual: Forest of Trees -->
+            <h4>Visual: Ensemble of Decision Trees Voting</h4>
+            <div class="diagram-container">
+                <div class="diagram">
+                    <div style="text-align:center;margin-bottom:1rem;font-size:0.85rem;color:var(--text-muted);">Each tree independently classifies the transaction, then majority vote decides</div>
+                    <div class="ensemble-diagram">
+                        <div class="ensemble-tree">
+                            <div class="tree-icon">🌳</div>
+                            <div>Tree 1</div>
+                            <div style="color:var(--success);font-weight:700;margin-top:0.3rem;">Legit</div>
+                        </div>
+                        <div class="ensemble-tree">
+                            <div class="tree-icon">🌳</div>
+                            <div>Tree 2</div>
+                            <div style="color:var(--danger);font-weight:700;margin-top:0.3rem;">Fraud</div>
+                        </div>
+                        <div class="ensemble-tree winner">
+                            <div class="tree-icon">🌳</div>
+                            <div>Tree 3</div>
+                            <div style="color:var(--success);font-weight:700;margin-top:0.3rem;">Legit</div>
+                        </div>
+                        <div class="ensemble-tree">
+                            <div class="tree-icon">🌳</div>
+                            <div>Tree 4</div>
+                            <div style="color:var(--success);font-weight:700;margin-top:0.3rem;">Legit</div>
+                        </div>
+                        <div class="ensemble-tree">
+                            <div class="tree-icon">🌳</div>
+                            <div>Tree 5</div>
+                            <div style="color:var(--success);font-weight:700;margin-top:0.3rem;">Legit</div>
+                        </div>
+                        <div class="ensemble-tree">
+                            <div class="tree-icon">🌳</div>
+                            <div>Tree 6</div>
+                            <div style="color:var(--danger);font-weight:700;margin-top:0.3rem;">Fraud</div>
+                        </div>
+                    </div>
+                    <div style="text-align:center;margin-top:1rem;">
+                        <div style="display:inline-block;background:linear-gradient(135deg,var(--orange-primary),var(--orange-dark));padding:0.6rem 1.5rem;border-radius:10px;color:white;font-weight:700;font-size:0.9rem;">
+                            Majority Vote: LEGITIMATE (4 vs 2)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pros-cons">
+                <div class="pros">
+                    <h5>Strengths</h5>
+                    <ul>
+                        <li>Resistant to overfitting (ensemble averaging)</li>
+                        <li>Handles both numerical and categorical features</li>
+                        <li>Provides feature importance rankings</li>
+                        <li>Works well out of the box with minimal tuning</li>
+                        <li>Parallelizable — trees are independent</li>
+                        <li>Handles missing values gracefully</li>
+                    </ul>
+                </div>
+                <div class="cons">
+                    <h5>Weaknesses</h5>
+                    <ul>
+                        <li>Slower to predict than a single tree (many trees to query)</li>
+                        <li>Less interpretable than a single decision tree</li>
+                        <li>Can still overfit on very noisy data</li>
+                        <li>Memory-intensive with many large trees</li>
+                        <li>Biased toward features with more levels</li>
+                        <li>Doesn't extrapolate beyond training data range</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h4>Hyperparameters We Tuned</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>Parameter</th><th>Values Tested</th><th>What It Controls</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>n_estimators</code></td>
+                            <td><span class="badge badge-orange">50, 100</span></td>
+                            <td><strong>Number of trees in the forest.</strong> More trees = better performance but diminishing returns and slower training. 100 is often a good balance.</td>
+                        </tr>
+                        <tr>
+                            <td><code>max_depth</code></td>
+                            <td><span class="badge badge-blue">10, 15</span></td>
+                            <td><strong>Maximum depth of each tree.</strong> Controls complexity. Deeper trees can capture more patterns but may overfit. Shallow trees underfit. 10-15 is a good range for tabular data.</td>
+                        </tr>
+                        <tr>
+                            <td><code>min_samples_split</code></td>
+                            <td><span class="badge badge-green">2, 5</span></td>
+                            <td><strong>Minimum samples required to split a node.</strong> Higher values = more conservative splits = simpler trees. Value of 2 means every node with 2+ samples can split.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Why We Included It</h4>
+            <p>
+                Random Forest is the <span class="highlight-text">gold standard baseline</span> for tabular data. It's robust, easy to tune, and gives excellent results with minimal effort. In our results, it achieved <strong>0.806 ROC-AUC</strong> — respectable but outperformed by boosting methods that learn from sequential errors.
+            </p>
+
+            <div class="code-block">
+                <span class="code-label">model_trainer.py</span>
+<pre><span class="string">"Random Forest"</span>: RandomForestClassifier(
+    random_state=<span class="number">42</span>,
+    n_estimators=<span class="number">50</span>,
+    n_jobs=<span class="number">-1</span>
+),
+<span class="string">"Random Forest"</span>: {
+    <span class="string">'n_estimators'</span>: [<span class="number">50</span>, <span class="number">100</span>],
+    <span class="string">'max_depth'</span>: [<span class="number">10</span>, <span class="number">15</span>],
+    <span class="string">'min_samples_split'</span>: [<span class="number">2</span>, <span class="number">5</span>]
+}</pre>
+            </div>
+        </div>
+
+        <!-- ============ MODEL 3: GRADIENT BOOSTING ============ -->
+        <div class="card" id="gradient-boosting">
+            <div class="card-header">
+                <div class="model-number">3</div>
+                <div>
+                    <h3>Gradient Boosting Classifier</h3>
+                    <span class="badge badge-orange">Ensemble (Boosting)</span>
+                    <span class="badge badge-blue">4th Place</span>
+                </div>
+            </div>
+
+            <h4>How It Works</h4>
+            <p>
+                Gradient Boosting builds trees <span class="highlight-text">sequentially</span>, where each new tree specifically focuses on the <strong>errors (residuals) of the previous trees</strong>. Unlike Random Forest where trees are independent, Gradient Boosting trees are <strong>students in a chain</strong> — each one learns from the mistakes of the ones before it.
+            </p>
+            <p style="margin-top:0.8rem;">
+                The algorithm works iteratively: (1) Start with a simple prediction (e.g., the average). (2) Compute the errors (residuals) — how far off each prediction is. (3) Train a new small tree to predict these errors. (4) Add this tree's prediction to the ensemble (scaled by the learning rate). Repeat until the desired number of trees is reached.
+            </p>
+
+            <div class="analogy-box">
+                <div class="analogy-label">Real-World Analogy</div>
+                <p>"Imagine a classroom where students take turns solving a hard math problem on the whiteboard. The first student gets it mostly right but makes several mistakes. The second student doesn't start from scratch — they <strong>only look at the mistakes</strong> the first student made and try to fix them. The third student fixes the second student's remaining mistakes, and so on. Each student gets progressively better at fixing <em>what's still wrong</em>. After many students, the final answer is excellent."</p>
+            </div>
+
+            <!-- Visual: Sequential Boosting -->
+            <h4>Visual: Sequential Learning Process</h4>
+            <div class="diagram-container">
+                <div class="boosting-diagram">
+                    <div class="boosting-stage" style="border-left:3px solid var(--info);">
+                        <div class="stage-num" style="background:rgba(59,130,246,0.2);color:var(--info);">1</div>
+                        <div class="stage-text"><strong>Initial Model</strong> — Predicts the average. High error rate.</div>
+                    </div>
+                    <div class="boost-connector"></div>
+                    <div class="boosting-stage" style="border-left:3px solid var(--warning);">
+                        <div class="stage-num" style="background:rgba(245,158,11,0.2);color:var(--warning);">2</div>
+                        <div class="stage-text"><strong>Tree 2</strong> — Learns from residuals of Tree 1. Error ↓↓</div>
+                    </div>
+                    <div class="boost-connector"></div>
+                    <div class="boosting-stage" style="border-left:3px solid var(--orange-primary);">
+                        <div class="stage-num" style="background:rgba(255,109,0,0.2);color:var(--orange-primary);">3</div>
+                        <div class="stage-text"><strong>Tree 3</strong> — Learns from residuals of Tree 1+2. Error ↓↓↓</div>
+                    </div>
+                    <div class="boost-connector"></div>
+                    <div class="boosting-stage" style="border-left:3px solid var(--success);">
+                        <div class="stage-num" style="background:rgba(16,185,129,0.2);color:var(--success);">N</div>
+                        <div class="stage-text"><strong>Tree N</strong> — Final corrections. Minimal residual error remains.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pros-cons">
+                <div class="pros">
+                    <h5>Strengths</h5>
+                    <ul>
+                        <li>Often highest accuracy on structured/tabular data</li>
+                        <li>Captures complex non-linear interactions</li>
+                        <li>Handles mixed feature types</li>
+                        <li>Feature importance is meaningful</li>
+                        <li>Strong performance without extensive feature engineering</li>
+                        <li>Regularization via learning rate</li>
+                    </ul>
+                </div>
+                <div class="cons">
+                    <h5>Weaknesses</h5>
+                    <ul>
+                        <li>Sequential — cannot parallelize training</li>
+                        <li>Sensitive to hyperparameter tuning</li>
+                        <li>Can overfit if too many trees or high learning rate</li>
+                        <li>Slower to train than Random Forest</li>
+                        <li>Less robust to noise than bagging methods</li>
+                        <li>Requires careful early stopping</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h4>Hyperparameters We Tuned</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>Parameter</th><th>Values Tested</th><th>What It Controls</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>n_estimators</code></td>
+                            <td><span class="badge badge-orange">50, 100</span></td>
+                            <td><strong>Number of boosting stages (trees).</strong> Each tree corrects the previous ones. More trees = more refinement but risk of overfitting. 50-100 is conservative but effective.</td>
+                        </tr>
+                        <tr>
+                            <td><code>learning_rate</code></td>
+                            <td><span class="badge badge-blue">0.1, 0.2</span></td>
+                            <td><strong>Shrinkage parameter.</strong> Controls how much each tree contributes. Lower = more conservative (each tree has less influence, but need more trees). Higher = each tree has more impact. Interacts with n_estimators.</td>
+                        </tr>
+                        <tr>
+                            <td><code>max_depth</code></td>
+                            <td><span class="badge badge-green">3, 5</span></td>
+                            <td><strong>Maximum depth of individual trees.</strong> In boosting, trees are intentionally kept shallow (stumps or small trees) to prevent overfitting. Depth 3-5 captures interactions without memorizing noise.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Why We Included It</h4>
+            <p>
+                Gradient Boosting is the <span class="highlight-text">predecessor to XGBoost</span> and CatBoost. We include it to understand the evolution of boosting algorithms and to compare scikit-learn's implementation against optimized versions. It achieved <strong>0.803 ROC-AUC</strong>, slightly below the optimized XGBoost.
+            </p>
+
+            <div class="code-block">
+                <span class="code-label">model_trainer.py</span>
+<pre><span class="string">"Gradient Boosting"</span>: GradientBoostingClassifier(
+    random_state=<span class="number">42</span>,
+    n_estimators=<span class="number">50</span>
+),
+<span class="string">"Gradient Boosting"</span>: {
+    <span class="string">'n_estimators'</span>: [<span class="number">50</span>, <span class="number">100</span>],
+    <span class="string">'learning_rate'</span>: [<span class="number">0.1</span>, <span class="number">0.2</span>],
+    <span class="string">'max_depth'</span>: [<span class="number">3</span>, <span class="number">5</span>]
+}</pre>
+            </div>
+        </div>
+
+        <!-- ============ MODEL 4: XGBOOST ============ -->
+        <div class="card" id="xgboost" style="border-color:var(--success);">
+            <div class="card-header">
+                <div class="model-number" style="background:linear-gradient(135deg,#10b981,#059669);">4</div>
+                <div>
+                    <h3>XGBoost Classifier <span class="badge badge-green">WINNER</span></h3>
+                    <span class="badge badge-orange">Ensemble (Boosting)</span>
+                    <span class="badge badge-green">1st Place — 0.814 ROC-AUC</span>
+                </div>
+            </div>
+
+            <h4>How It Works</h4>
+            <p>
+                XGBoost (<span class="highlight-text">eXtreme Gradient Boosting</span>) is an optimized, scalable implementation of gradient boosting. It follows the same sequential ensemble approach as Gradient Boosting but with <strong>critical engineering improvements</strong> that make it faster, more accurate, and more robust:
+            </p>
+            <ul style="margin:0.8rem 0;">
+                <li><strong>Regularization</strong> — Built-in L1 and L2 regularization prevents overfitting (gradient boosting lacks this)</li>
+                <li><strong>Parallel Processing</strong> — Feature splitting is parallelized across CPU cores during training</li>
+                <li><strong>Handling Missing Values</strong> — Automatically learns the best direction for missing values at each split</li>
+                <li><strong>Cache Optimization</strong> — Efficient memory access patterns for column-based data</li>
+                <li><strong>Pruning</strong> — Splits trees using a depth-first approach and prunes branches that don't improve the objective</li>
+            </ul>
+
+            <div class="analogy-box">
+                <div class="analogy-label">Real-World Analogy</div>
+                <p>"If Gradient Boosting is a smart student who learns from mistakes, XGBoost is that same student who also <strong>knows how to study efficiently</strong>. They have better note-taking systems (cache optimization), can review multiple subjects simultaneously (parallel processing), know when to stop studying a topic before memorizing irrelevant details (regularization), and can handle incomplete information gracefully (missing value handling). Same learning principle, but the <em>execution is optimized</em>."</p>
+            </div>
+
+            <!-- Visual: What makes XGBoost different -->
+            <h4>Visual: XGBoost vs Standard Gradient Boosting</h4>
+            <div class="comparison-grid">
+                <div class="comparison-card" style="border-color:var(--warning);">
+                    <h4 style="color:var(--warning);">Standard Gradient Boosting</h4>
+                    <ul style="text-align:left;margin-top:0.5rem;">
+                        <li>Sequential tree building only</li>
+                        <li>No built-in regularization</li>
+                        <li>Single-threaded training</li>
+                        <li>Fails on missing values</li>
+                        <li>No early stopping</li>
+                    </ul>
+                </div>
+                <div class="comparison-card" style="border-color:var(--success);">
+                    <h4 style="color:var(--success);">XGBoost</h4>
+                    <ul style="text-align:left;margin-top:0.5rem;">
+                        <li>Parallelized split-finding</li>
+                        <li>L1 + L2 regularization</li>
+                        <li>Multi-core training</li>
+                        <li>Handles missing values natively</li>
+                        <li>Built-in early stopping</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="pros-cons">
+                <div class="pros">
+                    <h5>Strengths</h5>
+                    <ul>
+                        <li>Best performance on structured/tabular data</li>
+                        <li>Excellent handling of sparse data and missing values</li>
+                        <li>Built-in regularization prevents overfitting</li>
+                        <li>Fast training with parallel processing</li>
+                        <li>Rich feature importance and SHAP support</li>
+                        <li>Production-ready with serialization</li>
+                    </ul>
+                </div>
+                <div class="cons">
+                    <h5>Weaknesses</h5>
+                    <ul>
+                        <li>More hyperparameters to tune than Random Forest</li>
+                        <li>Sequential boosting is inherently slower than bagging</li>
+                        <li>Can overfit with too many rounds on small datasets</li>
+                        <li>Less interpretable than single trees</li>
+                        <li>Requires careful tuning to beat Random Forest</li>
+                        <li>Not ideal for unstructured data (images, text)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h4>Hyperparameters We Tuned</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>Parameter</th><th>Values Tested</th><th>What It Controls</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>n_estimators</code></td>
+                            <td><span class="badge badge-orange">50, 100</span></td>
+                            <td><strong>Number of boosting rounds.</strong> Each round adds one tree. More rounds = more complex model. Combined with early stopping, prevents overfitting.</td>
+                        </tr>
+                        <tr>
+                            <td><code>max_depth</code></td>
+                            <td><span class="badge badge-blue">3, 6</span></td>
+                            <td><strong>Maximum tree depth.</strong> Controls individual tree complexity. Depth 3 is conservative (generalizes well), depth 6 captures more interactions but risks overfitting.</td>
+                        </tr>
+                        <tr>
+                            <td><code>learning_rate</code></td>
+                            <td><span class="badge badge-green">0.1, 0.2</span></td>
+                            <td><strong>Step size shrinkage.</strong> Scales each tree's contribution. Lower rate requires more trees but generalizes better. 0.1 is the classic default.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Why XGBoost Won</h4>
+            <p>
+                XGBoost won with <span class="highlight-text">0.814 ROC-AUC</span> because of its superior handling of the imbalanced, high-dimensional fraud detection dataset. Its built-in regularization prevented overfitting on the 284,807 transaction dataset while its optimized split-finding algorithm captured subtle fraud patterns in the V1-V28 PCA features.
+            </p>
+
+            <div class="code-block">
+                <span class="code-label">model_trainer.py</span>
+<pre><span class="string">"XGBoost"</span>: XGBClassifier(
+    random_state=<span class="number">42</span>,
+    eval_metric=<span class="string">'logloss'</span>,
+    n_estimators=<span class="number">50</span>,
+    n_jobs=<span class="number">-1</span>
+),
+<span class="string">"XGBoost"</span>: {
+    <span class="string">'n_estimators'</span>: [<span class="number">50</span>, <span class="number">100</span>],
+    <span class="string">'max_depth'</span>: [<span class="number">3</span>, <span class="number">6</span>],
+    <span class="string">'learning_rate'</span>: [<span class="number">0.1</span>, <span class="number">0.2</span>]
+}</pre>
+            </div>
+        </div>
+
+        <!-- ============ MODEL 5: CATBOOST ============ -->
+        <div class="card" id="catboost">
+            <div class="card-header">
+                <div class="model-number">5</div>
+                <div>
+                    <h3>CatBoost Classifier</h3>
+                    <span class="badge badge-orange">Ensemble (Boosting)</span>
+                    <span class="badge badge-purple">2nd Place — 0.809 ROC-AUC</span>
+                </div>
+            </div>
+
+            <h4>How It Works</h4>
+            <p>
+                CatBoost (<span class="highlight-text">Category Boosting</span>) is a gradient boosting algorithm developed by Yandex with a special focus on <strong>categorical features</strong>. While XGBoost and standard Gradient Boosting require one-hot encoding or label encoding of categories, CatBoost handles them <strong>natively</strong> using a technique called <strong>Ordered Target Statistics</strong>.
+            </p>
+            <p style="margin-top:0.8rem;">
+                The key innovation is <strong>Ordered Boosting</strong>: instead of using the entire training set to compute residuals (which causes data leakage), CatBoost uses a permutation-based approach where each tree is trained only on data points that appeared <em>before</em> it in a random ordering. This eliminates the prediction shift problem inherent in standard gradient boosting.
+            </p>
+
+            <div class="analogy-box">
+                <div class="analogy-label">Real-World Analogy</div>
+                <p>"Imagine you're training for a tennis tournament. Regular boosting practices with a coach who sees <em>all</em> your past matches before predicting your next weakness — sometimes the coach 'peeks' at your future games, creating an unrealistically optimistic practice plan. CatBoost's Ordered Boosting is like training with a coach who <strong>only reviews matches you've already played</strong> in strict chronological order. The coach never sees future matches, so their feedback is always honest and realistic. This produces a more reliable training program."</p>
+            </div>
+
+            <h4>Special: Native Categorical Feature Handling</h4>
+            <p>
+                When a categorical feature (like "country" or "payment method") is encountered, CatBoost converts it to a numeric value using target statistics: it computes the average target value for all previous training examples with the same category. This is done in a way that prevents target leakage — only past data points contribute to the statistic.
+            </p>
+
+            <div class="pros-cons">
+                <div class="pros">
+                    <h5>Strengths</h5>
+                    <ul>
+                        <li>Best native categorical feature handling</li>
+                        <li>Ordered Boosting prevents data leakage</li>
+                        <li>Built-in regularization (depth, L2)</li>
+                        <li>Often requires less hyperparameter tuning</li>
+                        <li>Excellent for datasets with many categorical features</li>
+                        <li>Built-in overfitting detection with eval set</li>
+                    </ul>
+                </div>
+                <div class="cons">
+                    <h5>Weaknesses</h5>
+                    <ul>
+                        <li>Can be slower than XGBoost for purely numerical data</li>
+                        <li>Larger model size and memory footprint</li>
+                        <li>Fewer community resources than XGBoost</li>
+                        <li>Less flexible with custom loss functions</li>
+                        <li>C++ backend can have compatibility issues</li>
+                        <li>Verbose output needs suppression (verbose=False)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h4>Hyperparameters We Tuned</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>Parameter</th><th>Values Tested</th><th>What It Controls</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>iterations</code></td>
+                            <td><span class="badge badge-orange">50, 100</span></td>
+                            <td><strong>Number of boosting iterations.</strong> Equivalent to n_estimators in XGBoost. Each iteration adds one tree to the ensemble. CatBoost uses symmetric (oblivious) decision trees.</td>
+                        </tr>
+                        <tr>
+                            <td><code>depth</code></td>
+                            <td><span class="badge badge-blue">4, 6</span></td>
+                            <td><strong>Depth of the trees.</strong> CatBoost uses oblivious trees where the same splitting criterion is used at each level. Depth 4 = 16 leaf nodes. Controls model complexity.</td>
+                        </tr>
+                        <tr>
+                            <td><code>learning_rate</code></td>
+                            <td><span class="badge badge-green">0.1, 0.2</span></td>
+                            <td><strong>Shrinkage applied to each tree.</strong> Scales the contribution of each boosting iteration. Lower values require more iterations but yield more stable models.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Why We Included It</h4>
+            <p>
+                CatBoost achieves <strong>0.809 ROC-AUC</strong> — very close to XGBoost. Its ordered boosting technique provides a theoretically more sound gradient boosting framework. While our dataset is mostly numerical (V1-V28 from PCA), CatBoost's regularization and ordered boosting still provide competitive performance.
+            </p>
+
+            <div class="code-block">
+                <span class="code-label">model_trainer.py</span>
+<pre><span class="string">"CatBoost"</span>: CatBoostClassifier(
+    random_state=<span class="number">42</span>,
+    verbose=<span class="keyword">False</span>,
+    iterations=<span class="number">50</span>
+),
+<span class="string">"CatBoost"</span>: {
+    <span class="string">'iterations'</span>: [<span class="number">50</span>, <span class="number">100</span>],
+    <span class="string">'depth'</span>: [<span class="number">4</span>, <span class="number">6</span>],
+    <span class="string">'learning_rate'</span>: [<span class="number">0.1</span>, <span class="number">0.2</span>]
+}</pre>
+            </div>
+        </div>
+
+        <!-- ============ MODEL 6: ADABOOST ============ -->
+        <div class="card" id="adaboost">
+            <div class="card-header">
+                <div class="model-number">6</div>
+                <div>
+                    <h3>AdaBoost Classifier</h3>
+                    <span class="badge badge-orange">Ensemble (Boosting)</span>
+                    <span class="badge badge-red">Lower Performance</span>
+                </div>
+            </div>
+
+            <h4>How It Works</h4>
+            <p>
+                AdaBoost (<span class="highlight-text">Adaptive Boosting</span>) was one of the first practical boosting algorithms. It works by training a sequence of <strong>weak learners</strong> (typically decision stumps — trees with only 1 split), where each successive learner focuses more on the samples that the previous learners <strong>misclassified</strong>.
+            </p>
+            <p style="margin-top:0.8rem;">
+                The algorithm assigns a weight to each training sample. Initially, all weights are equal. After each weak learner is trained, misclassified samples get <strong>higher weights</strong> and correctly classified samples get <strong>lower weights</strong>. The next learner then focuses its attention on the harder (higher-weight) examples. The final prediction is a weighted vote of all weak learners.
+            </p>
+
+            <div class="analogy-box">
+                <div class="analogy-label">Real-World Analogy</div>
+                <p>"A teacher notices that on a practice exam, most students got questions 1, 2, 3 right but <strong>questions 4 and 5 were difficult</strong>. So for the next practice session, the teacher gives <strong>extra attention and drill problems</strong> on questions 4 and 5 — the ones most students got wrong. After that round, students improve on 4 and 5 but some now struggle with question 3. The teacher adjusts again, focusing on question 3. This <strong>adaptive focus on weaknesses</strong> continues until the class masters all questions. AdaBoost does the same with data samples — it focuses extra attention on the hardest-to-classify cases."</p>
+            </div>
+
+            <!-- Visual: Weight Re-distribution -->
+            <h4>Visual: How Sample Weights Shift</h4>
+            <div class="diagram-container">
+                <div style="width:100%;max-width:500px;">
+                    <div style="text-align:center;font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem;">Each round, misclassified samples get bigger (higher weight)</div>
+                    <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;align-items:center;">
+                        <span style="width:60px;font-size:0.8rem;color:var(--text-muted);text-align:right;">Round 1:</span>
+                        <div style="display:flex;gap:4px;">
+                            <div style="width:25px;height:25px;border-radius:4px;background:rgba(59,130,246,0.3);border:1px solid var(--info);" title="Correct"></div>
+                            <div style="width:25px;height:25px;border-radius:4px;background:rgba(59,130,246,0.3);border:1px solid var(--info);" title="Correct"></div>
+                            <div style="width:25px;height:25px;border-radius:4px;background:rgba(239,68,68,0.3);border:1px solid var(--danger);" title="Misclassified"></div>
+                            <div style="width:25px;height:25px;border-radius:4px;background:rgba(59,130,246,0.3);border:1px solid var(--info);" title="Correct"></div>
+                            <div style="width:25px;height:25px;border-radius:4px;background:rgba(239,68,68,0.3);border:1px solid var(--danger);" title="Misclassified"></div>
+                        </div>
+                        <span style="font-size:0.75rem;color:var(--text-muted);">← same size = equal weight</span>
+                    </div>
+                    <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;align-items:center;">
+                        <span style="width:60px;font-size:0.8rem;color:var(--text-muted);text-align:right;">Round 2:</span>
+                        <div style="display:flex;gap:4px;align-items:center;">
+                            <div style="width:18px;height:18px;border-radius:4px;background:rgba(59,130,246,0.3);border:1px solid var(--info);" title="Correct"></div>
+                            <div style="width:18px;height:18px;border-radius:4px;background:rgba(59,130,246,0.3);border:1px solid var(--info);" title="Correct"></div>
+                            <div style="width:35px;height:35px;border-radius:4px;background:rgba(239,68,68,0.4);border:2px solid var(--danger);" title="Misclassified - HIGHER WEIGHT"></div>
+                            <div style="width:18px;height:18px;border-radius:4px;background:rgba(59,130,246,0.3);border:1px solid var(--info);" title="Correct"></div>
+                            <div style="width:35px;height:35px;border-radius:4px;background:rgba(239,68,68,0.4);border:2px solid var(--danger);" title="Misclassified - HIGHER WEIGHT"></div>
+                        </div>
+                        <span style="font-size:0.75rem;color:var(--text-muted);">← bigger = higher weight</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pros-cons">
+                <div class="pros">
+                    <h5>Strengths</h5>
+                    <ul>
+                        <li>Simple and easy to understand</li>
+                        <li>Fast training with weak learners</li>
+                        <li>Less prone to overfitting than complex models</li>
+                        <li>Theoretically well-founded (no-free-lunch connection)</li>
+                        <li>Works well with well-tuned weak learners</li>
+                        <li>Good for binary classification tasks</li>
+                    </ul>
+                </div>
+                <div class="cons">
+                    <h5>Weaknesses</h5>
+                    <ul>
+                        <li>Sensitive to noisy data and outliers</li>
+                        <li>Weak learners (stumps) may be too simple</li>
+                        <li>Can be outperformed by gradient boosting methods</li>
+                        <li>Sequential training is slow</li>
+                        <li>Limited to weak learners (can't use deep trees)</li>
+                        <li>Struggles with highly imbalanced data</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h4>Hyperparameters We Tuned</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>Parameter</th><th>Values Tested</th><th>What It Controls</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>n_estimators</code></td>
+                            <td><span class="badge badge-orange">50, 100</span></td>
+                            <td><strong>Number of weak learners (boosting rounds).</strong> Each round adds one decision stump. More rounds = more adaptive iterations but diminishing returns.</td>
+                        </tr>
+                        <tr>
+                            <td><code>learning_rate</code></td>
+                            <td><span class="badge badge-blue">0.5, 1.0</span></td>
+                            <td><strong>Shrinkage on each classifier's contribution.</strong> Controls how much each new weak learner affects the final vote. Value of 1.0 = full contribution, 0.5 = halved.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Why We Included It</h4>
+            <p>
+                AdaBoost is the <span class="highlight-text">historical pioneer</span> of boosting algorithms. While it underperforms compared to gradient-based boosting methods, it provides a valuable comparison point. It demonstrates that not all ensemble methods are equal — <strong>gradient-based boosting (XGBoost, CatBoost) significantly outperforms weight-based boosting (AdaBoost)</strong> on complex real-world tasks.
+            </p>
+
+            <div class="code-block">
+                <span class="code-label">model_trainer.py</span>
+<pre><span class="string">"AdaBoost"</span>: AdaBoostClassifier(
+    random_state=<span class="number">42</span>,
+    n_estimators=<span class="number">50</span>
+),
+<span class="string">"AdaBoost"</span>: {
+    <span class="string">'n_estimators'</span>: [<span class="number">50</span>, <span class="number">100</span>],
+    <span class="string">'learning_rate'</span>: [<span class="number">0.5</span>, <span class="number">1.0</span>]
+}</pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- SECTION 3: ENSEMBLE METHODS EXPLAINED        -->
+    <!-- ============================================ -->
+    <section class="section">
+        <div class="section-header">
+            <h2>Ensemble Methods Explained</h2>
+            <p>Understanding the two fundamental approaches: Bagging vs Boosting.</p>
+        </div>
+
+        <div class="card">
+            <h4>What is an Ensemble?</h4>
+            <p>
+                An <span class="highlight-text">ensemble</span> combines multiple "weak" models to create a single "strong" model. The core insight: <strong>diversity improves accuracy</strong>. Different models make different errors, and by combining them, errors cancel out.
+            </p>
+
+            <div class="comparison-grid">
+                <div class="comparison-card" style="border-color:var(--info);">
+                    <h4 style="color:var(--info);">Bagging (Bootstrap Aggregating)</h4>
+                    <p style="color:var(--text-secondary);font-size:0.9rem;margin-top:0.8rem;text-align:left;">
+                        <strong>Strategy:</strong> Train models in <em>parallel</em> on random data subsets, then <em>vote/average</em>.<br><br>
+                        <strong>Key idea:</strong> Reduce <strong>variance</strong> (overfitting). Each model sees a different random sample, so they overfit to different things. Averaging cancels out the overfitting.<br><br>
+                        <strong>Models:</strong> <span class="badge badge-green">Random Forest</span>
+                    </p>
+                </div>
+                <div class="comparison-card" style="border-color:var(--orange-primary);">
+                    <h4 style="color:var(--orange-primary);">Boosting</h4>
+                    <p style="color:var(--text-secondary);font-size:0.9rem;margin-top:0.8rem;text-align:left;">
+                        <strong>Strategy:</strong> Train models <em>sequentially</em>, where each model fixes the previous one's mistakes.<br><br>
+                        <strong>Key idea:</strong> Reduce <strong>bias</strong> (underfitting). Each new model focuses on hard cases that previous models got wrong.<br><br>
+                        <strong>Models:</strong> <span class="badge badge-orange">XGBoost, CatBoost, Gradient Boosting, AdaBoost</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Visual: Bagging vs Boosting -->
+            <h4>Visual: Bagging vs Boosting</h4>
+            <div class="diagram-container">
+                <div style="display:flex;gap:3rem;flex-wrap:wrap;justify-content:center;">
+                    <!-- Bagging -->
+                    <div style="text-align:center;">
+                        <div style="font-size:0.9rem;font-weight:700;color:var(--info);margin-bottom:1rem;">BAGGING (Parallel)</div>
+                        <div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem;">
+                            <div style="display:flex;gap:0.5rem;">
+                                <div style="padding:0.4rem 0.8rem;background:rgba(59,130,246,0.1);border:1px solid var(--info);border-radius:6px;font-size:0.75rem;color:var(--info);">Sample 1</div>
+                                <div style="padding:0.4rem 0.8rem;background:rgba(59,130,246,0.1);border:1px solid var(--info);border-radius:6px;font-size:0.75rem;color:var(--info);">Sample 2</div>
+                                <div style="padding:0.4rem 0.8rem;background:rgba(59,130,246,0.1);border:1px solid var(--info);border-radius:6px;font-size:0.75rem;color:var(--info);">Sample 3</div>
+                            </div>
+                            <div style="display:flex;gap:0.5rem;">
+                                <div style="padding:0.4rem 0.8rem;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.4);border-radius:6px;font-size:0.75rem;color:var(--info);">Tree A</div>
+                                <div style="padding:0.4rem 0.8rem;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.4);border-radius:6px;font-size:0.75rem;color:var(--info);">Tree B</div>
+                                <div style="padding:0.4rem 0.8rem;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.4);border-radius:6px;font-size:0.75rem;color:var(--info);">Tree C</div>
+                            </div>
+                            <div style="font-size:1.2rem;color:var(--info);">↓ ↓ ↓</div>
+                            <div style="padding:0.5rem 1rem;background:rgba(59,130,246,0.2);border:2px solid var(--info);border-radius:8px;font-size:0.8rem;color:var(--info);font-weight:700;">Majority Vote</div>
+                        </div>
+                    </div>
+                    <!-- Boosting -->
+                    <div style="text-align:center;">
+                        <div style="font-size:0.9rem;font-weight:700;color:var(--orange-primary);margin-bottom:1rem;">BOOSTING (Sequential)</div>
+                        <div style="display:flex;flex-direction:column;align-items:center;gap:0.3rem;">
+                            <div style="padding:0.4rem 0.8rem;background:rgba(255,109,0,0.1);border:1px solid rgba(255,109,0,0.3);border-radius:6px;font-size:0.75rem;color:var(--orange-primary);">Sample (Full Data)</div>
+                            <div style="color:var(--orange-primary);font-size:0.8rem;">→ Tree 1 → fixes errors →</div>
+                            <div style="color:var(--orange-primary);font-size:0.8rem;">→ Tree 2 → fixes errors →</div>
+                            <div style="color:var(--orange-primary);font-size:0.8rem;">→ Tree 3 → fixes errors →</div>
+                            <div style="font-size:1.2rem;color:var(--orange-primary);">↓</div>
+                            <div style="padding:0.5rem 1rem;background:rgba(255,109,0,0.2);border:2px solid var(--orange-primary);border-radius:8px;font-size:0.8rem;color:var(--orange-primary);font-weight:700;">Weighted Sum</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <p><strong>Why ensembles dominate on tabular data:</strong> The "no free lunch" theorem says no model is universally best. Ensembles hedge against this by combining diverse models. On structured/tabular data like our credit card dataset, gradient boosting ensembles (XGBoost, CatBoost) consistently win Kaggle competitions and industry benchmarks. Neural networks dominate unstructured data (images, text), but <strong>for rows and columns of numbers, gradient boosting is king</strong>.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- SECTION 4: GRIDSEARCHCV FULLY EXPLAINED      -->
+    <!-- ============================================ -->
+    <section class="section">
+        <div class="section-header">
+            <h2>GridSearchCV Hyperparameter Tuning</h2>
+            <p>How we found the optimal configuration for each model using exhaustive search.</p>
+        </div>
+
+        <div class="card">
+            <h4>What is GridSearchCV?</h4>
+            <p>
+                <span class="highlight-text">GridSearchCV</span> is an exhaustive hyperparameter optimization technique from scikit-learn. It systematically tries <strong>every possible combination</strong> of specified hyperparameter values and evaluates each combination using cross-validation. The combination with the best average cross-validation score is selected as the optimal configuration.
+            </p>
+
+            <div class="analogy-box">
+                <div class="analogy-label">Real-World Analogy</div>
+                <p>"Imagine you're tuning a radio. You have two dials: <strong>volume</strong> and <strong>bass</strong>. Volume can be set to 3, 5, or 7. Bass can be set to low, medium, or high. Instead of guessing, you methodically try <em>every combination</em>: (3,low), (3,medium), (3,high), (5,low), (5,medium), (5,high), (7,low), (7,medium), (7,high) — that's 9 combinations. For each, you listen to a song and rate the sound quality. After trying all 9, you pick the best one. GridSearchCV does exactly this, but with machine learning hyperparameters and cross-validation instead of your ears."</p>
+            </div>
+
+            <!-- Visual: Grid Search -->
+            <h4>Visual: Exhaustive Search Across Parameter Space</h4>
+            <div class="diagram-container">
+                <div style="text-align:center;">
+                    <div style="display:flex;gap:2rem;align-items:flex-start;flex-wrap:wrap;justify-content:center;">
+                        <div>
+                            <div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.5rem;">XGBoost: n_estimators vs max_depth</div>
+                            <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:0;">
+                                <div></div>
+                                <div style="padding:0.4rem 0.8rem;background:var(--bg-secondary);border-radius:6px 0 0 0;font-size:0.75rem;color:var(--text-muted);text-align:center;border:1px solid var(--border-color);">depth=3</div>
+                                <div style="padding:0.4rem 0.8rem;background:var(--bg-secondary);border-radius:0 6px 0 0;font-size:0.75rem;color:var(--text-muted);text-align:center;border:1px solid var(--border-color);">depth=6</div>
+                                <div style="padding:0.4rem 0.6rem;background:var(--bg-secondary);border-radius:6px 0 0 0;font-size:0.75rem;color:var(--text-muted);text-align:center;border:1px solid var(--border-color);">n=50, lr=0.1</div>
+                                <div style="padding:0.5rem;background:rgba(16,185,129,0.15);border:2px solid var(--success);border-radius:4px;font-size:0.7rem;color:var(--success);text-align:center;font-weight:600;">0.814 ⭐</div>
+                                <div style="padding:0.5rem;background:rgba(255,109,0,0.1);border:1px solid var(--orange-primary);border-radius:4px;font-size:0.7rem;color:var(--orange-primary);text-align:center;">0.810</div>
+                                <div style="padding:0.4rem 0.6rem;background:var(--bg-secondary);font-size:0.75rem;color:var(--text-muted);text-align:center;border:1px solid var(--border-color);">n=50, lr=0.2</div>
+                                <div style="padding:0.5rem;background:rgba(255,109,0,0.1);border:1px solid var(--orange-primary);border-radius:4px;font-size:0.7rem;color:var(--orange-primary);text-align:center;">0.808</div>
+                                <div style="padding:0.5rem;background:rgba(255,109,0,0.1);border:1px solid var(--orange-primary);border-radius:4px;font-size:0.7rem;color:var(--orange-primary);text-align:center;">0.811</div>
+                                <div style="padding:0.4rem 0.6rem;background:var(--bg-secondary);border-radius:0 0 0 6px;font-size:0.75rem;color:var(--text-muted);text-align:center;border:1px solid var(--border-color);">n=100, lr=0.1</div>
+                                <div style="padding:0.5rem;background:rgba(255,109,0,0.1);border:1px solid var(--orange-primary);border-radius:4px;font-size:0.7rem;color:var(--orange-primary);text-align:center;">0.812</div>
+                                <div style="padding:0.5rem;background:rgba(16,185,129,0.15);border:2px solid var(--success);border-radius:4px;font-size:0.7rem;color:var(--success);text-align:center;font-weight:600;">0.813</div>
+                                <div style="padding:0.4rem 0.6rem;background:var(--bg-secondary);border-radius:0 0 6px 0;font-size:0.75rem;color:var(--text-muted);text-align:center;border:1px solid var(--border-color);">n=100, lr=0.2</div>
+                                <div style="padding:0.5rem;background:rgba(255,109,0,0.1);border:1px solid var(--orange-primary);border-radius:4px;font-size:0.7rem;color:var(--orange-primary);text-align:center;">0.809</div>
+                                <div style="padding:0.5rem;background:rgba(255,109,0,0.1);border:1px solid var(--orange-primary);border-radius:4px;font-size:0.7rem;color:var(--orange-primary);text-align:center;">0.807</div>
+                            </div>
+                            <div style="font-size:0.7rem;color:var(--text-muted);margin-top:0.5rem;">
+                                <span style="display:inline-block;width:12px;height:12px;background:rgba(255,109,0,0.3);border:1px solid var(--orange-primary);border-radius:2px;vertical-align:middle;margin-right:4px;"></span> Tested &nbsp;
+                                <span style="display:inline-block;width:12px;height:12px;background:rgba(16,185,129,0.3);border:2px solid var(--success);border-radius:2px;vertical-align:middle;margin-right:4px;"></span> Best
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Cross-Validation Explained -->
+            <h4>Cross-Validation: cv=2 (2-Fold)</h4>
+            <p>
+                Cross-validation evaluates each hyperparameter combination by <strong>splits</strong> rather than a single train-test split. With <code>cv=2</code>, the training data is divided into 2 folds. The model is trained on fold 1 and tested on fold 2, then trained on fold 2 and tested on fold 1. The <strong>average score</strong> across both folds is reported.
+            </p>
+
+            <!-- Visual: 2-Fold CV -->
+            <div class="diagram-container">
+                <div style="width:100%;max-width:600px;">
+                    <div style="font-size:0.85rem;color:var(--text-muted);text-align:center;margin-bottom:1rem;">2-Fold Cross Validation (cv=2)</div>
+                    <!-- Fold 1 -->
+                    <div style="margin-bottom:0.5rem;">
+                        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.3rem;">Fold 1 (Train on fold 1, validate on fold 2)</div>
+                        <div class="cv-folds">
+                            <div class="cv-fold train">TRAIN (50%)</div>
+                            <div class="cv-fold val">VALIDATE (50%)</div>
+                        </div>
+                    </div>
+                    <!-- Fold 2 -->
+                    <div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.3rem;">Fold 2 (Train on fold 2, validate on fold 1)</div>
+                        <div class="cv-folds">
+                            <div class="cv-fold val">VALIDATE (50%)</div>
+                            <div class="cv-fold train">TRAIN (50%)</div>
+                        </div>
+                    </div>
+                    <div style="text-align:center;margin-top:1rem;font-size:0.85rem;color:var(--text-primary);">
+                        Final Score = <strong style="color:var(--orange-primary);">(Score Fold 1 + Score Fold 2) / 2</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <p><strong>Why cv=2 instead of cv=5?</strong> With 284K samples, even a 50% split gives ~142K validation samples — more than enough for reliable evaluation. cv=2 is chosen for <strong>speed</strong>: it cuts training time nearly in half compared to cv=5, while still providing a reasonable estimate of model performance. With GridSearchCV testing 39 parameter combinations, each with 2 folds, that's 78 total model fits — keeping it manageable.</p>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Scoring Metric -->
+            <h4>Why scoring='roc_auc'?</h4>
+            <p>
+                We use <span class="highlight-text">ROC-AUC (Receiver Operating Characteristic - Area Under Curve)</span> as our scoring metric because it's the <strong>ideal metric for imbalanced binary classification</strong>. Here's why:
+            </p>
+            <ul style="margin:0.8rem 0;">
+                <li><strong>Class imbalance:</strong> Only ~0.172% of transactions are fraudulent (172 out of 84,807 in test set). Accuracy is misleading — a model that predicts "all legitimate" would be 99.83% accurate but catch zero fraud.</li>
+                <li><strong>ROC-AUC measures ranking quality:</strong> It evaluates how well the model <em>separates</em> classes — does it assign higher probabilities to actual fraud than to legitimate transactions?</li>
+                <li><strong>Threshold-independent:</strong> ROC-AUC evaluates across all classification thresholds, not just 0.5. This gives a complete picture of model capability.</li>
+                <li><strong>Scale-invariant:</strong> It measures the quality of relative predictions, not absolute values.</li>
+            </ul>
+
+            <div class="code-block">
+                <span class="code-label">utils.py — GridSearchCV Configuration</span>
+<pre><span class="comment"># From src/utils.py</span>
+gs = GridSearchCV(
+    model,
+    para,
+    cv=<span class="number">2</span>,                    <span class="comment"># 2-fold cross-validation</span>
+    scoring=<span class="string">'roc_auc'</span>,        <span class="comment"># ROC-AUC as evaluation metric</span>
+    n_jobs=<span class="number">-1</span>,                <span class="comment"># Use all CPU cores</span>
+    verbose=<span class="number">0</span>,
+    error_score=<span class="string">'raise'</span>
+)
+gs.fit(X_train, y_train)
+
+<span class="comment"># Extract best model</span>
+best_model = gs.best_estimator_</pre>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Parameter Grid Table -->
+            <h4>Complete Hyperparameter Grid</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Model</th>
+                            <th>Parameter 1</th>
+                            <th>Parameter 2</th>
+                            <th>Parameter 3</th>
+                            <th>Combinations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Random Forest</strong></td>
+                            <td>n_estimators: [50, 100]</td>
+                            <td>max_depth: [10, 15]</td>
+                            <td>min_samples_split: [2, 5]</td>
+                            <td><span class="badge badge-orange">2×2×2 = 8</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>XGBoost</strong></td>
+                            <td>n_estimators: [50, 100]</td>
+                            <td>max_depth: [3, 6]</td>
+                            <td>learning_rate: [0.1, 0.2]</td>
+                            <td><span class="badge badge-orange">2×2×2 = 8</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Gradient Boosting</strong></td>
+                            <td>n_estimators: [50, 100]</td>
+                            <td>learning_rate: [0.1, 0.2]</td>
+                            <td>max_depth: [3, 5]</td>
+                            <td><span class="badge badge-orange">2×2×2 = 8</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>CatBoost</strong></td>
+                            <td>iterations: [50, 100]</td>
+                            <td>depth: [4, 6]</td>
+                            <td>learning_rate: [0.1, 0.2]</td>
+                            <td><span class="badge badge-orange">2×2×2 = 8</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Logistic Regression</strong></td>
+                            <td>C: [0.1, 1.0, 10.0]</td>
+                            <td>penalty: ['l2']</td>
+                            <td>solver: ['liblinear']</td>
+                            <td><span class="badge badge-blue">3×1×1 = 3</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>AdaBoost</strong></td>
+                            <td>n_estimators: [50, 100]</td>
+                            <td>learning_rate: [0.5, 1.0]</td>
+                            <td>—</td>
+                            <td><span class="badge badge-blue">2×2 = 4</span></td>
+                        </tr>
+                        <tr style="background:rgba(255,109,0,0.05);">
+                            <td colspan="4" style="text-align:right;font-weight:700;color:var(--text-primary);">Total Combinations:</td>
+                            <td><span class="badge badge-orange" style="font-size:0.85rem;">8+8+8+8+3+4 = <strong>39</strong></span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="warning-box">
+                <p><strong>Total Fits = 39 combinations × 2 folds = 78 model fits</strong> — Each fit trains the model on one fold and evaluates on the other. GridSearchCV tracks all 78 scores and returns the model configuration with the best average ROC-AUC.</p>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Step by Step Process -->
+            <h4>The Exhaustive Search Process: Step by Step</h4>
+            <div style="margin:1rem 0;">
+                <div class="boosting-stage" style="margin-bottom:0.5rem;border-left:3px solid var(--info);">
+                    <div class="stage-num" style="background:rgba(59,130,246,0.2);color:var(--info);">1</div>
+                    <div class="stage-text"><strong>Define Models & Grids</strong> — 6 models, each with its hyperparameter dictionary (from <code>model_trainer.py</code> lines 43-83)</div>
+                </div>
+                <div class="boosting-stage" style="margin-bottom:0.5rem;border-left:3px solid var(--warning);">
+                    <div class="stage-num" style="background:rgba(245,158,11,0.2);color:var(--warning);">2</div>
+                    <div class="stage-text"><strong>For each model</strong> — Generate all combinations from its parameter grid (e.g., RF: 8 combinations)</div>
+                </div>
+                <div class="boosting-stage" style="margin-bottom:0.5rem;border-left:3px solid var(--orange-primary);">
+                    <div class="stage-num" style="background:rgba(255,109,0,0.2);color:var(--orange-primary);">3</div>
+                    <div class="stage-text"><strong>For each combination</strong> — Create model instance with those hyperparameters</div>
+                </div>
+                <div class="boosting-stage" style="margin-bottom:0.5rem;border-left:3px solid var(--purple);">
+                    <div class="stage-num" style="background:rgba(139,92,246,0.2);color:var(--purple);">4</div>
+                    <div class="stage-text"><strong>For each fold (cv=2)</strong> — Split training data, train on fold 1, evaluate on fold 2, then swap</div>
+                </div>
+                <div class="boosting-stage" style="margin-bottom:0.5rem;border-left:3px solid var(--success);">
+                    <div class="stage-num" style="background:rgba(16,185,129,0.2);color:var(--success);">5</div>
+                    <div class="stage-text"><strong>Average fold scores</strong> — Record the mean ROC-AUC for this parameter combination</div>
+                </div>
+                <div class="boosting-stage" style="border-left:3px solid var(--danger);">
+                    <div class="stage-num" style="background:rgba(239,68,68,0.2);color:var(--danger);">6</div>
+                    <div class="stage-text"><strong>Select best</strong> — The combination with the highest average ROC-AUC becomes the model's <code>best_estimator_</code></div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- The Full Code -->
+            <h4>The Complete Evaluation Code (from utils.py)</h4>
+            <div class="code-block">
+                <span class="code-label">src/utils.py — evaluate_models()</span>
+<pre><span class="keyword">def</span> <span class="function">evaluate_models</span>(X_train, y_train, X_test, y_test, models, param):
+    <span class="comment"># Initialize dictionaries to store results</span>
+    report = {}
+    fitted_models = {}
+
+    <span class="comment"># Iterate through all 6 models</span>
+    <span class="keyword">for</span> i <span class="keyword">in</span> range(len(list(models))):
+        model_name = list(models.keys())[i]
+        model = list(models.values())[i]
+        para = param[model_name]
+
+        <span class="comment"># If hyperparameters exist, run GridSearchCV</span>
+        <span class="keyword">if</span> len(para) > <span class="number">0</span>:
+            gs = GridSearchCV(
+                model,
+                para,
+                cv=<span class="number">2</span>,                  <span class="comment"># 2-fold cross-validation</span>
+                scoring=<span class="string">'roc_auc'</span>,      <span class="comment"># ROC-AUC metric</span>
+                n_jobs=<span class="number">-1</span>,              <span class="comment"># Parallelize across cores</span>
+                verbose=<span class="number">0</span>,
+                error_score=<span class="string">'raise'</span>
+            )
+            gs.fit(X_train, y_train)
+            best_model = gs.best_estimator_
+        <span class="keyword">else</span>:
+            best_model = model
+            best_model.fit(X_train, y_train)
+
+        <span class="comment"># Store the fitted model</span>
+        fitted_models[model_name] = best_model
+
+        <span class="comment"># Evaluate on test set</span>
+        y_test_prob = best_model.predict_proba(X_test)[:, <span class="number">1</span>]
+        test_roc_auc = roc_auc_score(y_test, y_test_prob)
+
+        <span class="comment"># Store ROC-AUC score</span>
+        report[model_name] = test_roc_auc
+
+    <span class="keyword">return</span> report, fitted_models</pre>
+            </div>
+
+            <div class="code-block">
+                <span class="code-label">model_trainer.py — Selecting the Best Model</span>
+<pre><span class="comment"># Run evaluation — returns scores for all 6 models</span>
+model_report, fitted_models = evaluate_models(
+    X_train, y_train, X_test, y_test,
+    models=models, param=params
+)
+
+<span class="comment"># Find the model with the highest ROC-AUC</span>
+best_model_score = max(sorted(model_report.values()))
+best_model_name = list(model_report.keys())[
+    list(model_report.values()).index(best_model_score)
+]
+best_model = fitted_models[best_model_name]
+
+<span class="comment"># Save the winning model</span>
+save_object(
+    file_path=<span class="string">"artifacts/model.pkl"</span>,
+    obj=best_model
+)</pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- SECTION 5: WHY XGBOOST WON                  -->
+    <!-- ============================================ -->
+    <section class="section">
+        <div class="section-header">
+            <h2>Why XGBoost Won</h2>
+            <p>The final ranking and why gradient boosting dominates tabular data.</p>
+        </div>
+
+        <div class="card">
+            <h4>Final Model Rankings</h4>
+            <div style="margin:1.5rem 0;">
+                <div class="ranking-bar">
+                    <div class="ranking-label">XGBoost</div>
+                    <div class="ranking-track">
+                        <div class="ranking-fill winner" style="width:81.4%;background:linear-gradient(90deg,#10b981,#059669);">0.814 🏆</div>
+                    </div>
+                </div>
+                <div class="ranking-bar">
+                    <div class="ranking-label">CatBoost</div>
+                    <div class="ranking-track">
+                        <div class="ranking-fill" style="width:80.9%;background:linear-gradient(90deg,var(--purple),#6d28d9);">0.809</div>
+                    </div>
+                </div>
+                <div class="ranking-bar">
+                    <div class="ranking-label">Random Forest</div>
+                    <div class="ranking-track">
+                        <div class="ranking-fill" style="width:80.6%;background:linear-gradient(90deg,var(--info),#2563eb);">0.806</div>
+                    </div>
+                </div>
+                <div class="ranking-bar">
+                    <div class="ranking-label">Gradient Boosting</div>
+                    <div class="ranking-track">
+                        <div class="ranking-fill" style="width:80.3%;background:linear-gradient(90deg,var(--warning),#d97706);">0.803</div>
+                    </div>
+                </div>
+                <div class="ranking-bar">
+                    <div class="ranking-label">AdaBoost</div>
+                    <div class="ranking-track">
+                        <div class="ranking-fill" style="width:78%;background:linear-gradient(90deg,var(--danger),#dc2626);">~0.78</div>
+                    </div>
+                </div>
+                <div class="ranking-bar">
+                    <div class="ranking-label">Logistic Reg.</div>
+                    <div class="ranking-track">
+                        <div class="ranking-fill" style="width:75%;background:linear-gradient(90deg,#6b7280,#4b5563);">~0.75</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <h4>Why Gradient Boosting Wins on Tabular Data</h4>
+            <ul style="margin:1rem 0;">
+                <li><strong>Sequential error correction:</strong> Each tree focuses on what previous trees missed, creating a highly adaptive model that captures subtle fraud patterns.</li>
+                <li><strong>Feature interactions:</strong> Gradient boosting automatically captures complex feature interactions (e.g., high transaction amount + unusual time + specific V-feature patterns) that linear models can't express.</li>
+                <li><strong>Regularization:</strong> XGBoost's built-in L1/L2 regularization prevents overfitting on the imbalanced dataset, while AdaBoost lacks this mechanism.</li>
+                <li><strong>Optimized engineering:</strong> XGBoost's parallelized split-finding, cache-efficient data structures, and automatic missing value handling give it a computational edge.</li>
+                <li><strong>Handling imbalance:</strong> Tree-based models naturally handle imbalanced classes through their split criteria, while logistic regression requires careful calibration.</li>
+            </ul>
+
+            <h4>Why the Top 3 Differ</h4>
+            <div class="comparison-grid">
+                <div class="comparison-card" style="border-color:var(--success);">
+                    <h4 style="color:var(--success);">XGBoost (0.814)</h4>
+                    <p style="color:var(--text-secondary);font-size:0.85rem;margin-top:0.5rem;text-align:left;">
+                        Regularized boosting + optimized C++ implementation. Best balance of bias reduction and overfitting prevention. The engineering quality makes the difference.
+                    </p>
+                </div>
+                <div class="comparison-card" style="border-color:var(--purple);">
+                    <h4 style="color:var(--purple);">CatBoost (0.809)</h4>
+                    <p style="color:var(--text-secondary);font-size:0.85rem;margin-top:0.5rem;text-align:left;">
+                        Ordered Boosting theoretically prevents data leakage better. Close to XGBoost because our dataset is mostly numerical — CatBoost's categorical advantage doesn't apply here.
+                    </p>
+                </div>
+                <div class="comparison-card" style="border-color:var(--info);">
+                    <h4 style="color:var(--info);">Random Forest (0.806)</h4>
+                    <p style="color:var(--text-secondary);font-size:0.85rem;margin-top:0.5rem;text-align:left;">
+                        Bagging reduces variance but doesn't reduce bias. Each tree is independent and makes similar errors on hard cases. Boosting's sequential error correction gives it the edge.
+                    </p>
+                </div>
+                <div class="comparison-card" style="border-color:var(--warning);">
+                    <h4 style="color:var(--warning);">Gradient Boosting (0.803)</h4>
+                    <p style="color:var(--text-secondary);font-size:0.85rem;margin-top:0.5rem;text-align:left;">
+                        Same boosting principle as XGBoost but without regularization or optimized split-finding. The 0.011 gap to XGBoost shows the value of these engineering improvements.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- SECTION 6: WHY NOT OTHER MODELS              -->
+    <!-- ============================================ -->
+    <section class="section">
+        <div class="section-header">
+            <h2>Why Not Other Models?</h2>
+            <p>Reasons we excluded common ML algorithms from our comparison.</p>
+        </div>
+
+        <div class="card">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Model</th>
+                            <th>Why Excluded</th>
+                            <th>When It Would Be Useful</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Support Vector Machine (SVM)</strong></td>
+                            <td>Training complexity is O(n²) to O(n³). With 227,845 training samples, SVM would take <span class="highlight-text">hours to days</span> to train. Unusable for GridSearchCV with multiple hyperparameter combinations.</td>
+                            <td>Small datasets (&lt;10K samples), text classification with high-dimensional sparse features.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>K-Nearest Neighbors (KNN)</strong></td>
+                            <td>Subject to the <span class="highlight-text">curse of dimensionality</span>. With 29 features (V1-V28 + Amount), distance metrics become less meaningful. Also very slow for prediction — must compute distances to all training points.</td>
+                            <td>Low-dimensional datasets, recommendation systems, anomaly detection with few features.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Neural Networks (MLP/DNN)</strong></td>
+                            <td><span class="highlight-text">Overkill for structured/tabular data.</span> Neural networks excel at unstructured data (images, text, audio) but gradient boosting consistently outperforms them on tabular datasets. Also requires more data, more tuning, and more compute.</td>
+                            <td>Image classification, NLP, speech recognition, large-scale unstructured data.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Naive Bayes</strong></td>
+                            <td><span class="highlight-text">Assumes feature independence.</span> Our V1-V28 features (from PCA of correlated features) violate this assumption. The "naive" independence assumption leads to poor probability estimates on correlated features.</td>
+                            <td>Text classification (spam detection), document categorization, when features are truly independent.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Decision Tree (Single)</strong></td>
+                            <td><span class="highlight-text">Too prone to overfitting.</span> A single tree memorizes training data patterns (including noise). Ensemble methods (Random Forest, XGBoost) use many trees to overcome this weakness.</td>
+                            <td>When interpretability is paramount, feature exploration, baseline for ensemble methods.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="info-box">
+                <p><strong>Key takeaway:</strong> Model selection isn't just about accuracy — it's about the right tool for the job. For <strong>tabular/structured data with moderate size</strong> (like our credit card dataset), gradient boosting methods (XGBoost, CatBoost, LightGBM) are the industry standard. Neural networks would be the choice if we had raw transaction descriptions (text) or wanted to combine structured data with customer behavior sequences.</p>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<!-- ==================== FOOTER NAVIGATION ==================== -->
+<footer class="footer-nav">
+    <div class="container">
+        <a href="explanation_part3.html">
+            <span class="arrow">&larr;</span>
+            <span>Part 3: Feature Engineering & SMOTE<br><small style="color:var(--text-muted);">Feature scaling, PCA features, class imbalance</small></span>
+        </a>
+        <a href="explanation_part5.html">
+            <span>Part 5: Model Evaluation & SHAP<br><small style="color:var(--text-muted);">Confusion matrix, ROC curves, explainability</small></span>
+            <span class="arrow">&rarr;</span>
+        </a>
+    </div>
+</footer>
+
+</body>
+</html>
