@@ -1,0 +1,1 @@
+function f(){let q=(document.querySelector('#q')?.value||'').toLowerCase();document.querySelectorAll('[data-s]').forEach(x=>x.style.display=x.dataset.s.toLowerCase().includes(q)?'':'none')}
