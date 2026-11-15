@@ -1,8 +1,10 @@
 {
   "project": "UCI credit-card default prediction",
-  "created_at": "2026-11-15T08:45:59.773882+00:00",
+  "created_at": "2026-11-15T09:05:26.498359+00:00",
   "data_path": "C:\\Users\\Vedantnew\\OneDrive\\Desktop\\dummy\\ucicreditcard\\data\\raw\\UCI_Credit_Card.csv",
   "random_state": 42,
+  "search_mode": "standard",
+  "cv_folds": 3,
   "splits": {
     "train": 18000,
     "validation": 6000,
@@ -37,76 +39,78 @@
   "selected_model": "catboost",
   "model_comparison": {
     "logistic_regression": {
-      "cv_roc_auc": 0.7628522064513595,
-      "cv_average_precision": 0.5067391502142526,
+      "cv_roc_auc": 0.7628926459589099,
+      "cv_average_precision": 0.506161248025264,
       "best_params": {
         "model__C": 1.0
       }
     },
     "random_forest": {
-      "cv_roc_auc": 0.7814916912093864,
-      "cv_average_precision": 0.5509059595813106,
+      "cv_roc_auc": 0.7844057481034058,
+      "cv_average_precision": 0.557418312946569,
       "best_params": {
-        "model__max_depth": 10,
-        "model__min_samples_leaf": 4,
-        "model__n_estimators": 100
+        "model__max_depth": 8,
+        "model__max_features": "sqrt",
+        "model__min_samples_leaf": 5,
+        "model__n_estimators": 150
       }
     },
     "catboost": {
-      "cv_roc_auc": 0.785359664215894,
-      "cv_average_precision": 0.5612091023974981,
+      "cv_roc_auc": 0.7876119868073732,
+      "cv_average_precision": 0.5644777571654237,
       "best_params": {
-        "model__depth": 4,
-        "model__iterations": 100,
-        "model__learning_rate": 0.05
+        "model__depth": 6,
+        "model__iterations": 150,
+        "model__l2_leaf_reg": 3,
+        "model__learning_rate": 0.03
       }
     }
   },
-  "threshold": 0.25499999999999995,
-  "validation_f1_at_threshold": 0.5438657811953862,
+  "threshold": 0.245,
+  "validation_f1_at_threshold": 0.547072920232797,
   "test_metrics": {
-    "roc_auc": 0.7788619901304146,
-    "average_precision": 0.5585439300574544,
-    "precision": 0.5019607843137255,
-    "recall": 0.5787490580256217,
-    "f1": 0.5376268813440672,
-    "balanced_accuracy": 0.7078423227213493,
-    "log_loss": 0.43076155554892237,
+    "roc_auc": 0.7805464572168259,
+    "average_precision": 0.5582374451960749,
+    "precision": 0.4941030415890751,
+    "recall": 0.5998492840994725,
+    "f1": 0.5418652144315861,
+    "balanced_accuracy": 0.7127215605175299,
+    "log_loss": 0.42975131370374836,
     "confusion_matrix": [
       [
-        3911,
-        762
+        3858,
+        815
       ],
       [
-        559,
-        768
+        531,
+        796
       ]
     ]
   },
   "classification_report": {
     "0": {
-      "precision": 0.8749440715883668,
-      "recall": 0.8369355874170769,
-      "f1-score": 0.8555178825330855,
+      "precision": 0.8790157211209843,
+      "recall": 0.8255938369355874,
+      "f1-score": 0.8514676671816376,
       "support": 4673.0
     },
     "1": {
-      "precision": 0.5019607843137255,
-      "recall": 0.5787490580256217,
-      "f1-score": 0.5376268813440672,
+      "precision": 0.4941030415890751,
+      "recall": 0.5998492840994725,
+      "f1-score": 0.5418652144315861,
       "support": 1327.0
     },
-    "accuracy": 0.7798333333333334,
+    "accuracy": 0.7756666666666666,
     "macro avg": {
-      "precision": 0.6884524279510462,
-      "recall": 0.7078423227213493,
-      "f1-score": 0.6965723819385763,
+      "precision": 0.6865593813550297,
+      "recall": 0.7127215605175299,
+      "f1-score": 0.6966664408066119,
       "support": 6000.0
     },
     "weighted avg": {
-      "precision": 0.7924526012194587,
-      "recall": 0.7798333333333334,
-      "f1-score": 0.7852109894367809,
+      "precision": 0.793885866831177,
+      "recall": 0.7756666666666666,
+      "f1-score": 0.7829939247150844,
       "support": 6000.0
     }
   }

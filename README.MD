@@ -9,11 +9,11 @@ This is an educational risk-estimation system. It is not an automated lending, d
 - Validates 23 client inputs before prediction.
 - Builds past-only utilisation, payment-ratio, repayment-history, average, trend, and flag features.
 - Fits all preprocessing inside a scikit-learn Pipeline.
-- Compares Logistic Regression, Random Forest, and CatBoost through shuffled stratified cross-validation.
+- Compares Logistic Regression, Random Forest, and CatBoost through shuffled stratified cross-validation and a real parameter grid.
 - Uses a three-way stratified split: 60% training, 20% validation, and 20% final test data.
 - Selects the model using training cross-validation, selects an F1 threshold on validation data, and reports final metrics once on the untouched test partition.
 - Produces ROC, precision-recall, calibration, and threshold-analysis charts.
-- Saves a single versioned inference pipeline plus metadata, then serves it through Flask HTML and JSON endpoints.
+- Saves a serialized inference pipeline plus metadata, then serves it through Flask HTML and JSON endpoints.
 
 ## Project layout
 
@@ -37,9 +37,12 @@ python -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 python -m src.credit_risk.training --seed 42
+python -m src.credit_risk.explain
 pytest -q
 python application.py
 ```
+
+The default training run uses a repeatable three-fold search sized for a laptop. For a wider five-fold search, use `python -m src.credit_risk.training --seed 42 --full-search`; expect it to take substantially longer.
 
 Open `http://localhost:5000` for the form, `http://localhost:5000/health` to check the loaded artifact, or send JSON to `POST /api/predict`.
 
@@ -86,6 +89,8 @@ The image trains the pipeline during its build so the runtime image uses an arti
 
 The source data is historical, limited to one population and period, and includes demographic attributes. A strong offline metric does not establish fairness, calibration, legal compliance, or suitability for a real credit decision. Production use requires current representative data, documented business costs, calibration monitoring, fairness and privacy review, security controls, human oversight, and an appeal process.
 
+Read [MODEL_CARD.md](MODEL_CARD.md) for the current data, training protocol, exact metrics, explainability scope, and limitations.
+
 ## Learning material
 
-Start with [the documentation course](codexcreateddocs2/README.html). It explains the dataset, code, model choices, evaluation, defects in the prior implementation, and interview talking points in plain English.
+The [documentation course](codexcreateddocs2/README.html) is retained as a historical reverse-engineering learning resource for the pre-overhaul repository. For the current runnable system, treat this README, [MODEL_CARD.md](MODEL_CARD.md), the generated `models/model_metadata.json`, and the active `src/credit_risk/` code as the source of truth.

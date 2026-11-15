@@ -1,0 +1,22 @@
+{
+  "numeric__PAY_0": 0.29447910775979086,
+  "numeric__max_payment_delay": 0.2044645484255485,
+  "numeric__avg_payment_status": 0.09199863759849754,
+  "numeric__LIMIT_BAL": 0.08615279653441482,
+  "numeric__months_with_delays": 0.08427867708398296,
+  "numeric__credit_utilization": 0.06628046665768056,
+  "numeric__avg_payment_amount": 0.06204177404151997,
+  "numeric__PAY_AMT6": 0.042020962594809565,
+  "numeric__bill_amount_trend": 0.041939478386240577,
+  "numeric__BILL_AMT1": 0.03864464646713118,
+  "categorical__high_utilization_1": 0.03347964400433129,
+  "numeric__PAY_AMT1": 0.033067346580729795,
+  "numeric__payment_ratio_3": 0.03273064448879821,
+  "numeric__PAY_AMT2": 0.03019407598077842,
+  "numeric__PAY_AMT4": 0.02663848214730516,
+  "numeric__PAY_3": 0.02612719305124602,
+  "numeric__PAY_2": 0.02546182093412367,
+  "numeric__PAY_4": 0.023638384052469458,
+  "numeric__payment_ratio_2": 0.021962221082539014,
+  "numeric__PAY_AMT3": 0.02068387517866335
+}

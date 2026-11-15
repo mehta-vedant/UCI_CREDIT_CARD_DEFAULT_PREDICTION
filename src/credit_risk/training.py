@@ -37,23 +37,58 @@ class Evaluation:
     confusion_matrix: list[list[int]]
 
 
-def candidate_searches(random_state: int) -> dict[str, GridSearchCV]:
-    # Two shuffled, stratified folds keep the default command practical on a laptop.
-    # Increase this to five folds for a longer research run.
-    cv = StratifiedKFold(n_splits=2, shuffle=True, random_state=random_state)
+def candidate_searches(random_state: int, full_search: bool = False) -> dict[str, GridSearchCV]:
+    """Return comparable, leakage-safe model searches.
+
+    The standard search is intentionally small enough to repeat locally.  The
+    expanded search trades a substantially longer runtime for a wider search
+    space and five CV folds; it is opt-in so that a newcomer does not
+    accidentally start a multi-hour job.
+    """
+    folds = 5 if full_search else 3
+    cv = StratifiedKFold(n_splits=folds, shuffle=True, random_state=random_state)
     scoring = {"roc_auc": "roc_auc", "average_precision": "average_precision", "f1": "f1"}
+    if full_search:
+        logistic_grid = {"model__C": [0.1, 1.0, 10.0]}
+        forest_grid = {
+            "model__n_estimators": [300],
+            "model__max_depth": [8, 12, None],
+            "model__min_samples_leaf": [1, 4],
+            "model__max_features": ["sqrt"],
+        }
+        catboost_grid = {
+            "model__iterations": [300, 500],
+            "model__depth": [4, 6],
+            "model__learning_rate": [0.03, 0.07],
+            "model__l2_leaf_reg": [3, 7],
+        }
+    else:
+        logistic_grid = {"model__C": [0.25, 1.0, 4.0]}
+        forest_grid = {
+            "model__n_estimators": [150],
+            "model__max_depth": [8, 12],
+            "model__min_samples_leaf": [2, 5],
+            "model__max_features": ["sqrt"],
+        }
+        catboost_grid = {
+            "model__iterations": [150],
+            "model__depth": [4, 6],
+            "model__learning_rate": [0.03, 0.05],
+            "model__l2_leaf_reg": [3],
+        }
     candidates = {
         "logistic_regression": (
             LogisticRegression(max_iter=2000, class_weight="balanced", random_state=random_state),
-            {"model__C": [1.0]},
+            logistic_grid,
         ),
         "random_forest": (
-            RandomForestClassifier(class_weight="balanced_subsample", n_jobs=-1, random_state=random_state),
-            {"model__n_estimators": [100], "model__max_depth": [10], "model__min_samples_leaf": [4]},
+            # Reserve most CPU and memory for the rest of a developer's machine.
+            RandomForestClassifier(class_weight="balanced_subsample", n_jobs=2, random_state=random_state),
+            forest_grid,
         ),
         "catboost": (
             CatBoostClassifier(verbose=False, random_state=random_state, eval_metric="AUC", thread_count=2, allow_writing_files=False),
-            {"model__iterations": [100], "model__depth": [4], "model__learning_rate": [0.05]},
+            catboost_grid,
         ),
     }
     searches = {}
@@ -120,7 +155,7 @@ def save_plots(y_true: pd.Series, probabilities: np.ndarray, threshold: float) -
     plt.close()
 
 
-def train(data_path: Path = DATA_PATH, random_state: int = 42) -> dict:
+def train(data_path: Path = DATA_PATH, random_state: int = 42, full_search: bool = False) -> dict:
     data = pd.read_csv(data_path)
     X = validate_features(data[RAW_FEATURE_COLUMNS])
     y = data[TARGET_COLUMN].astype(int)
@@ -130,7 +165,7 @@ def train(data_path: Path = DATA_PATH, random_state: int = 42) -> dict:
     X_train, X_validation, y_train, y_validation = train_test_split(
         X_development, y_development, test_size=0.25, stratify=y_development, random_state=random_state,
     )
-    searches = candidate_searches(random_state)
+    searches = candidate_searches(random_state, full_search=full_search)
     comparison = {}
     for name, search in searches.items():
         print(f"Tuning {name}...", flush=True)
@@ -154,6 +189,8 @@ def train(data_path: Path = DATA_PATH, random_state: int = 42) -> dict:
         "created_at": datetime.now(timezone.utc).isoformat(),
         "data_path": str(data_path),
         "random_state": random_state,
+        "search_mode": "expanded" if full_search else "standard",
+        "cv_folds": 5 if full_search else 3,
         "splits": {"train": len(X_train), "validation": len(X_validation), "test": len(X_test)},
         "target": TARGET_COLUMN,
         "raw_feature_columns": RAW_FEATURE_COLUMNS,
@@ -173,6 +210,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train and evaluate the credit-risk pipeline.")
     parser.add_argument("--data", type=Path, default=DATA_PATH)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--full-search", action="store_true",
+        help="Use a wider grid and five CV folds (considerably slower).",
+    )
     args = parser.parse_args()
-    result = train(args.data, args.seed)
+    result = train(args.data, args.seed, full_search=args.full_search)
     print(json.dumps({"selected_model": result["selected_model"], "threshold": result["threshold"], "test_metrics": result["test_metrics"]}, indent=2))
