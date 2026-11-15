@@ -9,6 +9,7 @@ import shap
 
 from .config import DATA_PATH, MODEL_PATH, RAW_FEATURE_COLUMNS, REPORT_DIR, TARGET_COLUMN
 from .features import validate_features
+from .showcase import generate_showcase_assets
 
 
 def create_shap_report(sample_size: int = 500) -> dict[str, float]:
@@ -40,6 +41,7 @@ def create_shap_report(sample_size: int = 500) -> dict[str, float]:
     importance = pd.Series(abs(values).mean(axis=0), index=feature_names).sort_values(ascending=False)
     result = {name: float(score) for name, score in importance.head(20).items()}
     (REPORT_DIR / "shap_feature_importance.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+    generate_showcase_assets()
     return result
 
 

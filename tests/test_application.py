@@ -17,3 +17,15 @@ def test_favicon_is_served_locally():
     response = app.test_client().get("/favicon.ico")
     assert response.status_code == 200
     assert response.mimetype == "image/svg+xml"
+
+
+def test_project_showcase_and_aggregate_assets_are_available():
+    response = app.test_client().get("/project")
+    assert response.status_code == 200
+    assert b"Data quality and exploratory analysis" in response.data
+    assert b"Three models were compared" in response.data
+
+    asset = app.test_client().get("/static/project-assets/summary.json")
+    assert asset.status_code == 200
+    assert asset.json["rows"] == 30000
+    assert asset.json["missing_cells"] == 0

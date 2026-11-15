@@ -22,6 +22,7 @@ data/raw/                 Source dataset
 src/credit_risk/          Feature engineering, training, inference, configuration
 models/                   Generated pipeline and metadata after training
 reports/                  Generated metric summaries and charts after training
+static/project-assets/    Aggregate EDA and recruiter-page visuals
 templates/                Flask user interface
 tests/                    Unit and application tests
 codexcreateddocs2/        Beginner-to-expert project learning course
@@ -35,16 +36,17 @@ Python 3.11 is the supported runtime.
 ```powershell
 python -m venv venv
 .\venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 python -m src.credit_risk.training --seed 42
 python -m src.credit_risk.explain
+python -m src.credit_risk.showcase
 pytest -q
 python application.py
 ```
 
 The default training run uses a repeatable three-fold search sized for a laptop. For a wider five-fold search, use `python -m src.credit_risk.training --seed 42 --full-search`; expect it to take substantially longer.
 
-Open `http://localhost:5000` for the form, `http://localhost:5000/health` to check the loaded artifact, or send JSON to `POST /api/predict`.
+Open `http://localhost:5000` for the dashboard, `http://localhost:5000/project` for the recruiter-facing ML walkthrough, `http://localhost:5000/predictdata` for the form, or `http://localhost:5000/health` to check the loaded artifact. JSON predictions use `POST /api/predict`.
 
 ## Example request
 

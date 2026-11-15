@@ -23,6 +23,7 @@ from sklearn.pipeline import Pipeline
 
 from .config import DATA_PATH, METADATA_PATH, MODEL_DIR, MODEL_PATH, RAW_FEATURE_COLUMNS, REPORT_DIR, TARGET_COLUMN
 from .features import build_preprocessor, validate_features
+from .showcase import generate_showcase_assets
 
 
 @dataclass
@@ -203,6 +204,7 @@ def train(data_path: Path = DATA_PATH, random_state: int = 42, full_search: bool
     }
     METADATA_PATH.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
     (REPORT_DIR / "training_summary.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+    generate_showcase_assets(data_path, METADATA_PATH)
     return metadata
 
 

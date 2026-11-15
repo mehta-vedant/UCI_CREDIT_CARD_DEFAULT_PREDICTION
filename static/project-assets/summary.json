@@ -1,0 +1,176 @@
+{
+  "rows": 30000,
+  "columns": 25,
+  "missing_cells": 0,
+  "duplicate_rows": 0,
+  "duplicate_ids": 0,
+  "default_count": 6636,
+  "non_default_count": 23364,
+  "default_rate": 0.2212,
+  "limit_mean": 167484.32266666667,
+  "limit_median": 140000.0,
+  "age_mean": 35.4855,
+  "age_median": 34.0,
+  "target_correlations": [
+    {
+      "feature": "PAY_0",
+      "correlation": 0.32479372847862237
+    },
+    {
+      "feature": "PAY_2",
+      "correlation": 0.2635512016721678
+    },
+    {
+      "feature": "PAY_3",
+      "correlation": 0.23525251372491712
+    },
+    {
+      "feature": "PAY_4",
+      "correlation": 0.21661363684242388
+    },
+    {
+      "feature": "PAY_5",
+      "correlation": 0.2041489138761645
+    },
+    {
+      "feature": "PAY_6",
+      "correlation": 0.18686636165354611
+    },
+    {
+      "feature": "LIMIT_BAL",
+      "correlation": -0.1535198763935072
+    },
+    {
+      "feature": "PAY_AMT1",
+      "correlation": -0.07292948777785163
+    },
+    {
+      "feature": "PAY_AMT2",
+      "correlation": -0.058578706582901575
+    },
+    {
+      "feature": "PAY_AMT4",
+      "correlation": -0.05682740089288691
+    }
+  ],
+  "pay_0_default_rates": [
+    {
+      "status": -2,
+      "label": "No use",
+      "count": 2759,
+      "default_rate": 0.13229430953243929
+    },
+    {
+      "status": -1,
+      "label": "Paid early",
+      "count": 5686,
+      "default_rate": 0.16778051354203308
+    },
+    {
+      "status": 0,
+      "label": "On time",
+      "count": 14737,
+      "default_rate": 0.12811291307593134
+    },
+    {
+      "status": 1,
+      "label": "1 mo late",
+      "count": 3688,
+      "default_rate": 0.33947939262472887
+    },
+    {
+      "status": 2,
+      "label": "2 mo late",
+      "count": 2667,
+      "default_rate": 0.6914135733033371
+    },
+    {
+      "status": 3,
+      "label": "3 mo late",
+      "count": 322,
+      "default_rate": 0.7577639751552795
+    },
+    {
+      "status": 4,
+      "label": "4 mo late",
+      "count": 76,
+      "default_rate": 0.6842105263157895
+    },
+    {
+      "status": 5,
+      "label": "5 mo late",
+      "count": 26,
+      "default_rate": 0.5
+    },
+    {
+      "status": 6,
+      "label": "6 mo late",
+      "count": 11,
+      "default_rate": 0.5454545454545454
+    },
+    {
+      "status": 7,
+      "label": "7 mo late",
+      "count": 9,
+      "default_rate": 0.7777777777777778
+    },
+    {
+      "status": 8,
+      "label": "8+ mo late",
+      "count": 19,
+      "default_rate": 0.5789473684210527
+    }
+  ],
+  "model": {
+    "selected_model": "catboost",
+    "threshold": 0.245,
+    "test_metrics": {
+      "roc_auc": 0.7805464572168259,
+      "average_precision": 0.5582374451960749,
+      "precision": 0.4941030415890751,
+      "recall": 0.5998492840994725,
+      "f1": 0.5418652144315861,
+      "balanced_accuracy": 0.7127215605175299,
+      "log_loss": 0.42975131370374836,
+      "confusion_matrix": [
+        [
+          3858,
+          815
+        ],
+        [
+          531,
+          796
+        ]
+      ]
+    },
+    "comparison": {
+      "logistic_regression": {
+        "cv_roc_auc": 0.7628926459589099,
+        "cv_average_precision": 0.506161248025264,
+        "best_params": {
+          "model__C": 1.0
+        }
+      },
+      "random_forest": {
+        "cv_roc_auc": 0.7844057481034058,
+        "cv_average_precision": 0.557418312946569,
+        "best_params": {
+          "model__max_depth": 8,
+          "model__max_features": "sqrt",
+          "model__min_samples_leaf": 5,
+          "model__n_estimators": 150
+        }
+      },
+      "catboost": {
+        "cv_roc_auc": 0.7876119868073732,
+        "cv_average_precision": 0.5644777571654237,
+        "best_params": {
+          "model__depth": 6,
+          "model__iterations": 150,
+          "model__l2_leaf_reg": 3,
+          "model__learning_rate": 0.03
+        }
+      }
+    }
+  }
+}

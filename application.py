@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+import json
+from pathlib import Path
 
 from flask import Flask, Response, jsonify, render_template, request
 
@@ -9,6 +11,7 @@ from src.credit_risk.inference import load_assets, predict
 
 app = Flask(__name__)
 application = app
+SHOWCASE_SUMMARY_PATH = Path(app.static_folder) / "project-assets" / "summary.json"
 
 
 def form_payload() -> dict[str, str | None]:
@@ -18,6 +21,14 @@ def form_payload() -> dict[str, str | None]:
 @app.get("/")
 def index():
     return render_template("index.html")
+
+
+@app.get("/project")
+def project_showcase():
+    if not SHOWCASE_SUMMARY_PATH.exists():
+        return "Project showcase assets are missing. Run `python -m src.credit_risk.showcase`.", 503
+    summary = json.loads(SHOWCASE_SUMMARY_PATH.read_text(encoding="utf-8"))
+    return render_template("project.html", summary=summary)
 
 
 @app.get("/favicon.ico")
