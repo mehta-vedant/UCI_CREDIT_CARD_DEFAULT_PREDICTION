@@ -29,3 +29,12 @@ def test_project_showcase_and_aggregate_assets_are_available():
     assert asset.status_code == 200
     assert asset.json["rows"] == 30000
     assert asset.json["missing_cells"] == 0
+
+
+def test_beginner_course_is_served_by_flask():
+    client = app.test_client()
+    response = client.get("/guide")
+    assert response.status_code == 302
+    page = client.get(response.headers["Location"])
+    assert page.status_code == 200
+    assert b"Learn this credit risk project from zero" in page.data

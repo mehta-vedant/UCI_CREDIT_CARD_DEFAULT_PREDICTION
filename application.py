@@ -4,7 +4,7 @@ import os
 import json
 from pathlib import Path
 
-from flask import Flask, Response, jsonify, render_template, request
+from flask import Flask, Response, jsonify, redirect, render_template, request, send_from_directory
 
 from src.credit_risk.config import RAW_FEATURE_COLUMNS
 from src.credit_risk.inference import load_assets, predict
@@ -12,6 +12,7 @@ from src.credit_risk.inference import load_assets, predict
 app = Flask(__name__)
 application = app
 SHOWCASE_SUMMARY_PATH = Path(app.static_folder) / "project-assets" / "summary.json"
+COURSE_DIR = Path(app.root_path) / "project_guide" / "course"
 
 
 def form_payload() -> dict[str, str | None]:
@@ -29,6 +30,17 @@ def project_showcase():
         return "Project showcase assets are missing. Run `python -m src.credit_risk.showcase`.", 503
     summary = json.loads(SHOWCASE_SUMMARY_PATH.read_text(encoding="utf-8"))
     return render_template("project.html", summary=summary)
+
+
+@app.get("/guide")
+def course_home():
+    """Redirect so relative course assets resolve below /guide/."""
+    return redirect("/guide/index.html")
+
+
+@app.get("/guide/<path:filename>")
+def course_file(filename: str):
+    return send_from_directory(COURSE_DIR, filename)
 
 
 @app.get("/favicon.ico")
