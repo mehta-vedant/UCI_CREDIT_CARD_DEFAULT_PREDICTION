@@ -1,0 +1,113 @@
+{
+  "project": "UCI credit-card default prediction",
+  "created_at": "2026-11-15T08:45:59.773882+00:00",
+  "data_path": "C:\\Users\\Vedantnew\\OneDrive\\Desktop\\dummy\\ucicreditcard\\data\\raw\\UCI_Credit_Card.csv",
+  "random_state": 42,
+  "splits": {
+    "train": 18000,
+    "validation": 6000,
+    "test": 6000
+  },
+  "target": "default.payment.next.month",
+  "raw_feature_columns": [
+    "LIMIT_BAL",
+    "SEX",
+    "EDUCATION",
+    "MARRIAGE",
+    "AGE",
+    "PAY_0",
+    "PAY_2",
+    "PAY_3",
+    "PAY_4",
+    "PAY_5",
+    "PAY_6",
+    "BILL_AMT1",
+    "BILL_AMT2",
+    "BILL_AMT3",
+    "BILL_AMT4",
+    "BILL_AMT5",
+    "BILL_AMT6",
+    "PAY_AMT1",
+    "PAY_AMT2",
+    "PAY_AMT3",
+    "PAY_AMT4",
+    "PAY_AMT5",
+    "PAY_AMT6"
+  ],
+  "selected_model": "catboost",
+  "model_comparison": {
+    "logistic_regression": {
+      "cv_roc_auc": 0.7628522064513595,
+      "cv_average_precision": 0.5067391502142526,
+      "best_params": {
+        "model__C": 1.0
+      }
+    },
+    "random_forest": {
+      "cv_roc_auc": 0.7814916912093864,
+      "cv_average_precision": 0.5509059595813106,
+      "best_params": {
+        "model__max_depth": 10,
+        "model__min_samples_leaf": 4,
+        "model__n_estimators": 100
+      }
+    },
+    "catboost": {
+      "cv_roc_auc": 0.785359664215894,
+      "cv_average_precision": 0.5612091023974981,
+      "best_params": {
+        "model__depth": 4,
+        "model__iterations": 100,
+        "model__learning_rate": 0.05
+      }
+    }
+  },
+  "threshold": 0.25499999999999995,
+  "validation_f1_at_threshold": 0.5438657811953862,
+  "test_metrics": {
+    "roc_auc": 0.7788619901304146,
+    "average_precision": 0.5585439300574544,
+    "precision": 0.5019607843137255,
+    "recall": 0.5787490580256217,
+    "f1": 0.5376268813440672,
+    "balanced_accuracy": 0.7078423227213493,
+    "log_loss": 0.43076155554892237,
+    "confusion_matrix": [
+      [
+        3911,
+        762
+      ],
+      [
+        559,
+        768
+      ]
+    ]
+  },
+  "classification_report": {
+    "0": {
+      "precision": 0.8749440715883668,
+      "recall": 0.8369355874170769,
+      "f1-score": 0.8555178825330855,
+      "support": 4673.0
+    },
+    "1": {
+      "precision": 0.5019607843137255,
+      "recall": 0.5787490580256217,
+      "f1-score": 0.5376268813440672,
+      "support": 1327.0
+    },
+    "accuracy": 0.7798333333333334,
+    "macro avg": {
+      "precision": 0.6884524279510462,
+      "recall": 0.7078423227213493,
+      "f1-score": 0.6965723819385763,
+      "support": 6000.0
+    },
+    "weighted avg": {
+      "precision": 0.7924526012194587,
+      "recall": 0.7798333333333334,
+      "f1-score": 0.7852109894367809,
+      "support": 6000.0
+    }
+  }
+}

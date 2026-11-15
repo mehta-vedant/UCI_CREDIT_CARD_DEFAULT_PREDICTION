@@ -1,160 +1,91 @@
-# 🏦 Credit Card Default Prediction System
+# Credit risk prediction system
 
-[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org)
-[![Flask](https://img.shields.io/badge/Flask-3.0+-green.svg)](https://flask.palletsprojects.com)
-[![Scikit-learn](https://img.shields.io/badge/Scikit--learn-1.3+-orange.svg)](https://scikit-learn.org)
-[![XGBoost](https://img.shields.io/badge/XGBoost-1.7+-red.svg)](https://xgboost.readthedocs.io)
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-success.svg)](https://uci-credit-card-default-prediction.onrender.com)
+A reproducible machine-learning application that estimates the risk of next-month credit-card payment default. It uses the UCI Default of Credit Card Clients dataset: 30,000 historical Taiwan client records, with a binary target named `default.payment.next.month`.
 
-## 📋 Project Overview
+This is an educational risk-estimation system. It is not an automated lending, denial, or fraud-detection system.
 
-A complete machine learning system that predicts credit card payment defaults with **81% ROC-AUC accuracy**. This project demonstrates end-to-end ML engineering from data preprocessing to production deployment.
+## What this project does
 
-**🌐 Live Application**: [https://uci-credit-card-default-prediction.onrender.com](https://uci-credit-card-default-prediction.onrender.com)
+- Validates 23 client inputs before prediction.
+- Builds past-only utilisation, payment-ratio, repayment-history, average, trend, and flag features.
+- Fits all preprocessing inside a scikit-learn Pipeline.
+- Compares Logistic Regression, Random Forest, and CatBoost through shuffled stratified cross-validation.
+- Uses a three-way stratified split: 60% training, 20% validation, and 20% final test data.
+- Selects the model using training cross-validation, selects an F1 threshold on validation data, and reports final metrics once on the untouched test partition.
+- Produces ROC, precision-recall, calibration, and threshold-analysis charts.
+- Saves a single versioned inference pipeline plus metadata, then serves it through Flask HTML and JSON endpoints.
 
-### 🎯 Problem Statement
-Predict whether a credit card customer will default on their payment next month based on their demographic information, payment history, and bill amounts.
+## Project layout
 
-## 🚀 Technical Implementation
-
-### 🤖 **Machine Learning Pipeline**
-- **7 Algorithms Tested**: XGBoost, CatBoost, Random Forest, Gradient Boosting, AdaBoost, Extra Trees, Logistic Regression
-- **Best Model**: XGBoost with **81% ROC-AUC** performance
-- **Hyperparameter Tuning**: GridSearchCV with cross-validation
-- **Evaluation Metric**: ROC-AUC (industry standard for imbalanced classification)
-
-### 🔧 **Feature Engineering** 
-Created **17 engineered features** from original 24 features:
-
-**Credit Behavior Features:**
-- Credit utilization ratio (bill amount / credit limit)
-- Payment efficiency ratios for each month
-- Payment status patterns and reliability scores
-
-**Financial Trends:**
-- Average bill amounts and payment amounts
-- Trend analysis for spending and payment patterns  
-- Risk indicators for high utilization and payment behavior
-
-### 🌐 **Web Application**
-- **Live Demo**: [https://uci-credit-card-default-prediction.onrender.com](https://uci-credit-card-default-prediction.onrender.com)
-- **Framework**: Flask with responsive HTML/CSS interface
-- **Input**: 24 customer attributes (demographics, payment history, bill amounts)
-- **Output**: Binary prediction with confidence (Will Default / Will Not Default)
-- **Deployment**: Production deployment on Render cloud platform
-
-## 📊 Dataset & Performance
-
-### **Dataset Information**
-- **Source**: UCI Credit Card Default Dataset
-- **Size**: 30,000 customers with 25 features
-- **Target**: Binary classification (Default: Yes/No)
-- **Time Period**: 6 months of payment history (April-September 2005)
-
-### **Model Performance**
-| Algorithm | ROC-AUC Score | Accuracy |
-|-----------|---------------|----------|
-| **CatBoost (Best)** | **0.78** | **82.3%** |
-| XGBoost | 0.766 | 81.9% |
-| Random Forest | 0.778 | 81.6% |
-| Gradient Boosting | 0.780 | 81.4% |
-
-## 📁 Project Structure
-
-```
-├── src/                    # Core ML Pipeline
-│   ├── components/         # Data ingestion, transformation, model training
-│   ├── pipeline/          # Training and prediction pipelines
-│   └── utils.py           # Model evaluation utilities
-├── templates/             # Flask web interface
-├── artifacts/             # Trained models and preprocessors
-├── notebooks/             # EDA and model development
-└── application.py         # Flask web application
+```text
+data/raw/                 Source dataset
+src/credit_risk/          Feature engineering, training, inference, configuration
+models/                   Generated pipeline and metadata after training
+reports/                  Generated metric summaries and charts after training
+templates/                Flask user interface
+tests/                    Unit and application tests
+codexcreateddocs2/        Beginner-to-expert project learning course
+archive/                  Historical experiments and legacy implementations
 ```
 
-## 🛠️ Technologies Used
+## Run locally
 
-| Category | Technologies |
-|----------|-------------|
-| **Programming** | Python 3.11 |
-| **ML Libraries** | Scikit-learn, XGBoost, CatBoost, Pandas, NumPy |
-| **Web Framework** | Flask |
-| **Frontend** | HTML5, CSS3 |
-| **Deployment** | Render Cloud Platform |
-| **Model Persistence** | Pickle |
+Python 3.11 is the supported runtime.
 
-## 🚀 How to Use
-
-### **Live Demo**
-Visit the deployed application: [https://uci-credit-card-default-prediction.onrender.com](https://uci-credit-card-default-prediction.onrender.com)
-
-1. Click "Start Prediction"
-2. Enter customer information (24 fields including demographics, payment history, bill amounts)
-3. Get instant prediction result
-
-### **Local Setup**
-```bash
-# Clone repository
-git clone https://github.com/coderved63/UCI_CREDIT_CARD_DEFAULT_PREDICTION.git
-cd ucicreditcard
-
-# Install dependencies  
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-
-# Run the application
+python -m src.credit_risk.training --seed 42
+pytest -q
 python application.py
-
-# Access at: http://localhost:5000
 ```
 
-### **Training Pipeline**
-```bash
-# To retrain the model with new data
-python src/pipeline/train_pipeline.py
+Open `http://localhost:5000` for the form, `http://localhost:5000/health` to check the loaded artifact, or send JSON to `POST /api/predict`.
+
+## Example request
+
+```json
+{
+  "LIMIT_BAL": 100000,
+  "SEX": 1,
+  "EDUCATION": 2,
+  "MARRIAGE": 1,
+  "AGE": 30,
+  "PAY_0": 0,
+  "PAY_2": 0,
+  "PAY_3": 0,
+  "PAY_4": 0,
+  "PAY_5": 0,
+  "PAY_6": 0,
+  "BILL_AMT1": 10000,
+  "BILL_AMT2": 10000,
+  "BILL_AMT3": 10000,
+  "BILL_AMT4": 10000,
+  "BILL_AMT5": 10000,
+  "BILL_AMT6": 10000,
+  "PAY_AMT1": 2000,
+  "PAY_AMT2": 2000,
+  "PAY_AMT3": 2000,
+  "PAY_AMT4": 2000,
+  "PAY_AMT5": 2000,
+  "PAY_AMT6": 2000
+}
 ```
 
-## 💡 Key Features
+## Docker
 
-### **Feature Engineering Process**
-- **Original Features**: 24 (demographics, payment history, bill/payment amounts)  
-- **Engineered Features**: 17 additional features created
-- **Key Engineered Features**:
-  - Credit utilization ratio (bill_amount/credit_limit)
-  - Payment efficiency ratios for each month
-  - Average payment status and reliability scores
-  - Bill amount and payment trends over time
+```powershell
+docker build -t credit-risk .
+docker run -p 5000:5000 credit-risk
+```
 
-### **Data Processing**
-- **Handled Missing Values**: Imputation strategies for different feature types
-- **Scaling**: StandardScaler for numerical features
-- **Class Imbalance**: Addressed 22% default rate using ROC-AUC metric
+The image trains the pipeline during its build so the runtime image uses an artifact generated by the same code it serves.
 
-## 📈 Results
+## Responsible use and current limitations
 
-### **Model Performance**
-- **Best Algorithm**: XGBoost
-- **ROC-AUC Score**: 0.814 (81.4%)
-- **Accuracy**: 82.3%
-- **Cross-Validation**: GridSearchCV with 2-fold CV
+The source data is historical, limited to one population and period, and includes demographic attributes. A strong offline metric does not establish fairness, calibration, legal compliance, or suitability for a real credit decision. Production use requires current representative data, documented business costs, calibration monitoring, fairness and privacy review, security controls, human oversight, and an appeal process.
 
-### **Key Findings**
-- Payment history is the strongest predictor of default
-- Credit utilization >80% significantly increases default risk
-- Engineered features improved model performance by ~15%
+## Learning material
 
-## 🔗 Links
-
-- **🌐 Live Application**: [https://uci-credit-card-default-prediction.onrender.com](https://uci-credit-card-default-prediction.onrender.com)
-- **📊 Dataset Source**: [UCI ML Repository](https://archive.ics.uci.edu/ml/datasets/default+of+credit+card+clients)
-- **🐙 GitHub Repository**: [https://github.com/coderved63/UCI_CREDIT_CARD_DEFAULT_PREDICTION](https://github.com/coderved63/UCI_CREDIT_CARD_DEFAULT_PREDICTION)
-
----
-
-## 🏆 Project Summary
-
-This project demonstrates **end-to-end machine learning engineering**:
-- ✅ **Data Science**: EDA, feature engineering, model selection
-- ✅ **Machine Learning**: Multiple algorithms, hyperparameter tuning, performance evaluation  
-- ✅ **Software Engineering**: Modular code structure, error handling, logging
-- ✅ **Web Development**: Flask application with responsive UI
-- ✅ **DevOps**: Cloud deployment, version control, production optimization
+Start with [the documentation course](codexcreateddocs2/README.html). It explains the dataset, code, model choices, evaluation, defects in the prior implementation, and interview talking points in plain English.
