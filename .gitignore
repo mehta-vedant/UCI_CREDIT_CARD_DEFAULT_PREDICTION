@@ -386,3 +386,18 @@ test_*.py
 
 # ✅ Source code
 # !src/
+
+# Active reproducible project assets
+!data/
+!data/raw/
+!data/raw/UCI_Credit_Card.csv
+!models/
+!models/credit_risk_pipeline.joblib
+!models/model_metadata.json
+!reports/
+!reports/*.json
+!reports/*.png
+!Dockerfile
+!.dockerignore
+!tests/
+!tests/*.py
