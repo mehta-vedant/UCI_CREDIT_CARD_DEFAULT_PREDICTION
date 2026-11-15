@@ -401,3 +401,9 @@ test_*.py
 !.dockerignore
 !tests/
 !tests/*.py
+
+# Local verification artefacts
+__pycache__/
+*.py[cod]
+.playwright-mcp/
+reports/flask-smoke*.log
