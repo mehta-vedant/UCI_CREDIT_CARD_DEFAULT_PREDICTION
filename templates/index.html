@@ -456,7 +456,7 @@
     <section class="hero">
         <div class="badge">ML-POWERED RISK ANALYSIS</div>
         <h1>Predict Credit Card<br><span>Default Risk</span> Instantly</h1>
-        <p>An XGBoost-powered prediction engine trained on 30,000 credit profiles. Analyze payment history, demographics, and financial behavior to assess default probability in real-time.</p>
+        <p>A CatBoost-powered prediction engine trained on historical credit profiles. Analyze payment history, demographics, and financial behavior to estimate default probability in real time.</p>
         <div class="hero-actions">
             <a href="/predictdata" class="btn-hero primary">Run Prediction &rarr;</a>
             <a href="#how-it-works" class="btn-hero secondary">How It Works</a>
@@ -466,16 +466,16 @@
     <!-- Stats -->
     <section class="stats">
         <div class="stat-card">
-            <div class="stat-value accent">81.4%</div>
-            <div class="stat-label">ROC-AUC Score</div>
+            <div class="stat-value accent">0.7789</div>
+            <div class="stat-label">Final-test ROC-AUC</div>
         </div>
         <div class="stat-card">
             <div class="stat-value green">30K</div>
             <div class="stat-label">Training Samples</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value amber">41</div>
-            <div class="stat-label">Engineered Features</div>
+            <div class="stat-value amber">42</div>
+            <div class="stat-label">Model Inputs</div>
         </div>
         <div class="stat-card">
             <div class="stat-value accent">6</div>
@@ -486,14 +486,14 @@
     <!-- Features -->
     <section class="features-section" id="features">
         <div class="section-header">
-            <h2>Built for Accuracy</h2>
-            <p>A robust ML pipeline designed with production-grade feature engineering and rigorous model evaluation.</p>
+            <h2>Built for Risk Estimation</h2>
+            <p>An educational ML pipeline with feature engineering, model comparison, and documented evaluation limits.</p>
         </div>
         <div class="features-grid">
             <div class="feature-card">
                 <div class="feature-icon purple">📊</div>
-                <h3>17 Engineered Features</h3>
-                <p>Derived credit utilization ratios, payment behavior trends, and spending patterns from raw transaction history.</p>
+                <h3>42 Model Inputs</h3>
+                <p>Derived utilization ratios, payment behavior trends, and encoded profile inputs from 23 raw fields.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon green">⚡</div>
@@ -502,8 +502,8 @@
             </div>
             <div class="feature-card">
                 <div class="feature-icon amber">🎯</div>
-                <h3>XGBoost Optimized</h3>
-                <p>Hyperparameter-tuned via GridSearchCV with 39 combinations across 2-fold cross-validation for optimal generalization.</p>
+                <h3>CatBoost pipeline</h3>
+                <p>The current model was selected from three candidates with shuffled stratified cross-validation. It uses one saved preprocessing-and-model pipeline.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon red">🔍</div>
@@ -527,20 +527,20 @@
     <section class="model-section" id="model">
         <div class="section-header">
             <h2>The Engine Behind It</h2>
-            <p>Why XGBoost outperformed five other algorithms on our dataset.</p>
+            <p>The current saved CatBoost artifact and the evaluation numbers reproduced from its paired test split.</p>
         </div>
         <div class="model-card">
             <div class="model-visual">
-                <span>81.4%</span>
+                <span>0.7789</span>
             </div>
             <div class="model-info">
-                <h3>XGBoost Classifier</h3>
-                <p>Selected after comparing Logistic Regression, Random Forest, Gradient Boosting, AdaBoost, and CatBoost. XGBoost achieved the highest ROC-AUC through its gradient boosting framework with regularization, handling the 78:22 class imbalance natively via the AUC optimization objective.</p>
+                <h3>CatBoost Classifier</h3>
+                <p>The saved pipeline was selected after comparing Logistic Regression, Random Forest, and CatBoost with shuffled stratified cross-validation. It achieved 0.7789 ROC-AUC on a final 6,000-row test partition. ROC-AUC measures ranking quality across thresholds; it does not make a displayed score a guaranteed real-world default rate.</p>
                 <div class="model-tags">
                     <span class="tag">Gradient Boosting</span>
-                    <span class="tag">L1/L2 Regularization</span>
                     <span class="tag">Tree-Based</span>
-                    <span class="tag">Handles Imbalance</span>
+                    <span class="tag">0.7789 test ROC-AUC</span>
+                    <span class="tag">0.255 review threshold</span>
                 </div>
             </div>
         </div>
@@ -561,19 +561,19 @@
             <div class="step">
                 <div class="step-num">2</div>
                 <h3>ML Pipeline Processes</h3>
-                <p>Data flows through our ColumnTransformer: numerical scaling, categorical encoding, and 17 engineered features are computed automatically.</p>
+                <p>Data flows through the saved preprocessing pipeline: numerical scaling, categorical encoding, and derived behavioral features are computed automatically.</p>
             </div>
             <div class="step">
                 <div class="step-num">3</div>
                 <h3>Get Risk Assessment</h3>
-                <p>Receive a probability score, risk classification, and actionable recommendation — all in under a second.</p>
+                <p>Receive a probability score and display risk band. This educational demo is not an automated lending decision.</p>
             </div>
         </div>
     </section>
 </main>
 
 <footer>
-    <p>CreditGuard AI &mdash; UCI Credit Card Default Prediction &mdash; Built with XGBoost, Flask, and scikit-learn</p>
+    <p>CreditGuard AI &mdash; UCI Credit Card Default Prediction &mdash; Built with CatBoost, Flask, and scikit-learn</p>
 </footer>
 
 </body>

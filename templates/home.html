@@ -485,7 +485,7 @@
     <a href="/" class="back">← Back to Dashboard</a>
     <div class="page-header">
         <h1>Credit Default Risk Assessment</h1>
-        <p>Complete the form below to analyze default probability using our trained XGBoost model.</p>
+        <p>Complete the form below to estimate default probability using the current trained CatBoost model.</p>
     </div>
 
     {% if results %}
@@ -494,7 +494,7 @@
         <div class="result-card">
             <div class="result-header">
                 <h2>Prediction Result</h2>
-                <p class="result-subtitle">XGBoost Model Analysis</p>
+                <p class="result-subtitle">CatBoost risk estimate</p>
 
                 <div class="gauge-container">
                     <svg class="gauge-svg" viewBox="0 0 200 120">
@@ -546,15 +546,14 @@
             </div>
 
             <div class="recommendation">
-                <div class="summary-title">Recommendation</div>
+                <div class="summary-title">How to interpret this result</div>
                 <div class="rec-box {{ risk_color }}">
                     {% if risk_color == 'low' %}
-                        This profile shows strong payment discipline with a low probability of default ({{ probability }}%). The applicant demonstrates consistent payment behavior and manageable credit utilization. Standard credit approval is recommended with regular monitoring.
-                    {% elif risk_color == 'moderate' %}
-                        This profile shows moderate risk indicators with a {{ probability }}% default probability. Some payment delays or high utilization patterns detected. Consider conditional approval with enhanced monitoring, lower credit limits, or requiring additional documentation.
+                        The model score ({{ probability }}%) is below the validation-selected review threshold of {{ threshold }}%. This is a model output, not a credit decision or a statement about this person.
                     {% else %}
-                        This profile shows high-risk indicators with a {{ probability }}% default probability. Significant payment delinquency or dangerous credit utilization patterns detected. Recommend thorough manual review, credit counseling referral, or application decline with counter-offers.
+                        The model score ({{ probability }}%) is at or above the validation-selected review threshold of {{ threshold }}%. A real organisation would need policy, human review, fairness checks, and an appeal process before acting on it.
                     {% endif %}
+                    <br><br>{{ disclaimer }}
                 </div>
             </div>
         </div>

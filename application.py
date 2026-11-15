@@ -25,7 +25,8 @@ def predict_datapoint():
     if request.method == "GET":
         return render_template("home.html")
     try:
-        result = predict(form_payload())
+        payload = form_payload()
+        result = predict(payload)
         return render_template(
             "home.html", results=result["label"],
             probability=round(result["default_probability"] * 100, 1),
@@ -33,6 +34,9 @@ def predict_datapoint():
             risk_level="Review recommended" if result["prediction"] else "No review flag",
             risk_color="high" if result["prediction"] else "low",
             disclaimer=result["disclaimer"],
+            limit_bal=payload["LIMIT_BAL"], age=payload["AGE"], sex=payload["SEX"],
+            education=payload["EDUCATION"], marriage=payload["MARRIAGE"],
+            BILL_AMT1=payload["BILL_AMT1"],
         )
     except (ValueError, RuntimeError) as error:
         return render_template("home.html", error=str(error)), 400
