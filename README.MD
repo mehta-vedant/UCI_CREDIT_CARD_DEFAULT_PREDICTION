@@ -26,6 +26,7 @@ static/project-assets/    Aggregate EDA and recruiter-page visuals
 templates/                Flask user interface
 tests/                    Unit and application tests
 project_guide/course/     Active beginner-to-interview learning course
+notebooks/                Reproducible EDA and feature-engineering walkthrough
 codexcreateddocs2/        Historical earlier learning material
 archive/                  Historical experiments and legacy implementations
 ```
@@ -48,6 +49,8 @@ python application.py
 The default training run uses a repeatable three-fold search sized for a laptop. For a wider five-fold search, use `python -m src.credit_risk.training --seed 42 --full-search`; expect it to take substantially longer.
 
 Open `http://localhost:5000` for the dashboard, `http://localhost:5000/project` for the recruiter-facing ML walkthrough, `http://localhost:5000/predictdata` for the form, `http://localhost:5000/guide` for the complete beginner learning course, or `http://localhost:5000/health` to check the loaded artifact. JSON predictions use `POST /api/predict`.
+
+For hands-on exploration, open [notebooks/01_eda_and_feature_engineering.ipynb](notebooks/01_eda_and_feature_engineering.ipynb). It uses the same raw CSV and `CreditRiskFeatureEngineer` as the active training and inference pipeline, so it is a reproducible companion rather than a separate notebook experiment.
 
 ## Example request
 

@@ -19,6 +19,15 @@ def form_payload() -> dict[str, str | None]:
     return {column: request.form.get(column) for column in RAW_FEATURE_COLUMNS}
 
 
+@app.after_request
+def add_security_headers(response):
+    """Apply small, deployment-safe defaults to every response."""
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    return response
+
+
 @app.get("/")
 def index():
     return render_template("index.html")
@@ -41,6 +50,20 @@ def course_home():
 @app.get("/guide/<path:filename>")
 def course_file(filename: str):
     return send_from_directory(COURSE_DIR, filename)
+
+
+@app.errorhandler(404)
+def not_found(error):
+    if request.path.startswith("/api/"):
+        return jsonify({"error": "Endpoint not found."}), 404
+    return render_template("error.html", code=404, title="Page not found", message="That page does not exist or has moved."), 404
+
+
+@app.errorhandler(405)
+def method_not_allowed(error):
+    if request.path.startswith("/api/"):
+        return jsonify({"error": "Method not allowed for this endpoint."}), 405
+    return render_template("error.html", code=405, title="Method not allowed", message="Use the page controls or return to the dashboard."), 405
 
 
 @app.get("/favicon.ico")

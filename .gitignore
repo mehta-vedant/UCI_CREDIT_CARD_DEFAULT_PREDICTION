@@ -388,6 +388,8 @@ test_*.py
 # !src/
 
 # Active reproducible project assets
+!notebooks/
+!notebooks/*.ipynb
 !data/
 !data/raw/
 !data/raw/UCI_Credit_Card.csv

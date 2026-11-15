@@ -31,3 +31,15 @@ def test_validation_rejects_invalid_age():
 def test_validation_returns_exact_model_input_order():
     validated = validate_features(pd.DataFrame([valid_row()]))
     assert list(validated.columns) == RAW_FEATURE_COLUMNS
+
+
+def test_validation_rejects_non_finite_and_invalid_source_codes():
+    row = valid_row()
+    row["LIMIT_BAL"] = float("inf")
+    with pytest.raises(ValueError, match="finite"):
+        validate_features(pd.DataFrame([row]))
+
+    row = valid_row()
+    row["PAY_0"] = 99
+    with pytest.raises(ValueError, match="PAY_0"):
+        validate_features(pd.DataFrame([row]))

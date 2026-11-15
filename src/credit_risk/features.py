@@ -81,14 +81,28 @@ def validate_features(frame: pd.DataFrame) -> pd.DataFrame:
     missing = sorted(set(RAW_FEATURE_COLUMNS) - set(frame.columns))
     if missing:
         raise ValueError(f"Missing required fields: {', '.join(missing)}")
+    unexpected = sorted(set(frame.columns) - set(RAW_FEATURE_COLUMNS))
+    if unexpected:
+        raise ValueError(f"Unexpected fields: {', '.join(unexpected)}")
     clean = frame[RAW_FEATURE_COLUMNS].copy()
     for column in RAW_FEATURE_COLUMNS:
         clean[column] = pd.to_numeric(clean[column], errors="raise")
+    if not np.isfinite(clean.to_numpy(dtype=float)).all():
+        raise ValueError("All fields must be finite numbers.")
     if (clean["LIMIT_BAL"] <= 0).any():
         raise ValueError("LIMIT_BAL must be greater than zero.")
     if (~clean["AGE"].between(18, 100)).any():
         raise ValueError("AGE must be between 18 and 100.")
-    for column in ["SEX", "EDUCATION", "MARRIAGE"]:
+    if (~clean["SEX"].isin([1, 2])).any():
+        raise ValueError("SEX must use a source-dataset code of 1 or 2.")
+    if (~clean["EDUCATION"].isin([0, 1, 2, 3, 4, 5, 6])).any():
+        raise ValueError("EDUCATION must use a source-dataset code from 0 to 6.")
+    if (~clean["MARRIAGE"].isin([0, 1, 2, 3])).any():
+        raise ValueError("MARRIAGE must use a source-dataset code from 0 to 3.")
+    for column in CreditRiskFeatureEngineer.payment_status_columns:
+        if (~clean[column].between(-2, 8)).any():
+            raise ValueError(f"{column} must be between -2 and 8.")
+    for column in CreditRiskFeatureEngineer.payment_columns:
         if (clean[column] < 0).any():
             raise ValueError(f"{column} cannot be negative.")
     return clean

@@ -38,3 +38,11 @@ def test_beginner_course_is_served_by_flask():
     page = client.get(response.headers["Location"])
     assert page.status_code == 200
     assert b"Learn this credit risk project from zero" in page.data
+
+
+def test_api_errors_are_json_and_security_headers_are_set():
+    client = app.test_client()
+    response = client.get("/api/does-not-exist")
+    assert response.status_code == 404
+    assert response.json == {"error": "Endpoint not found."}
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
