@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How this credit-risk project works</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231455c0'/%3E%3C/svg%3E">
+  <style>
+    :root { --ink:#14213d; --muted:#526179; --paper:#f7f9fc; --card:#fff; --blue:#1455c0; --teal:#087c7a; --amber:#a35b00; --red:#b42318; --line:#dce3ee; --code:#10233f; }
+    * { box-sizing:border-box; } body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.65 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
+    a { color:var(--blue); } code { background:#eef3fa; padding:.12rem .32rem; border-radius:4px; color:#14345f; } pre { overflow:auto; background:var(--code); color:#eaf2ff; padding:1rem 1.1rem; border-radius:10px; line-height:1.45; } pre code { color:inherit; background:transparent; padding:0; }
+    .shell { max-width:1280px; margin:auto; display:grid; grid-template-columns:248px minmax(0,1fr); gap:2rem; padding:1.5rem; } .top { background:linear-gradient(120deg,#10264b,#1455c0); color:white; padding:3.8rem max(1.5rem,calc((100vw - 1230px)/2)); }
+    .top p { max-width:780px; font-size:1.12rem; opacity:.93; } h1 { font-size:clamp(2.2rem,5vw,4rem); line-height:1.08; margin:0 0 .7rem; letter-spacing:-.04em; } h2 { margin:3rem 0 .8rem; font-size:1.75rem; line-height:1.2; } h3 { margin:1.6rem 0 .3rem; font-size:1.2rem; } .eyebrow { color:#b9d4ff; font-size:.78rem; letter-spacing:.12em; text-transform:uppercase; font-weight:750; }
+    aside { position:sticky; top:1rem; align-self:start; background:white; border:1px solid var(--line); border-radius:13px; padding:1rem; } aside strong { display:block; margin:.2rem .45rem .5rem; } aside a { display:block; padding:.36rem .45rem; text-decoration:none; color:#385171; font-size:.9rem; border-radius:6px; } aside a:hover { background:#edf4ff; color:var(--blue); }
+    main { min-width:0; } .card { background:var(--card); border:1px solid var(--line); border-radius:13px; padding:1.25rem 1.35rem; margin:1rem 0; box-shadow:0 5px 18px rgba(28,54,88,.035); } .callout { border-left:4px solid var(--blue); background:#edf4ff; padding:1rem 1.15rem; border-radius:0 10px 10px 0; margin:1rem 0; } .warning { border-left-color:var(--amber); background:#fff7ed; } .danger { border-left-color:var(--red); background:#fff4f2; }
+    .facts,.grid { display:grid; gap:1rem; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); } .fact { background:white; border:1px solid var(--line); border-radius:12px; padding:1rem; } .fact b { display:block; font-size:1.5rem; color:var(--blue); } .fact span { color:var(--muted); font-size:.88rem; }
+    table { width:100%; border-collapse:collapse; background:white; border:1px solid var(--line); border-radius:10px; overflow:hidden; margin:1rem 0; } th,td { padding:.72rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; } th { background:#edf4ff; font-size:.9rem; } tr:last-child td { border-bottom:0; } .tag { display:inline-block; padding:.18rem .5rem; border-radius:999px; background:#e5f0ff; color:#124890; font-weight:700; font-size:.75rem; letter-spacing:.03em; }
+    .diagram { background:white; border:1px solid var(--line); border-radius:13px; padding:1rem; overflow:auto; } .formula { font-size:1.08rem; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; color:#0a4f70; } details { background:white; border:1px solid var(--line); border-radius:10px; padding:.75rem 1rem; margin:.65rem 0; } summary { cursor:pointer; font-weight:700; } .metric { display:grid; grid-template-columns:repeat(4,minmax(110px,1fr)); gap:.7rem; } label { font-weight:650; font-size:.9rem; } input { width:100%; border:1px solid #c8d4e3; border-radius:7px; padding:.5rem; font:inherit; } button { border:0; border-radius:8px; padding:.65rem .9rem; background:var(--blue); color:white; cursor:pointer; font:inherit; margin-top:.75rem; } .result { margin-top:.8rem; font-weight:650; color:var(--teal); }
+    .flowbox { fill:#edf4ff; stroke:#1455c0; stroke-width:2; } .flowtext { fill:#14213d; font:600 14px system-ui; } .flowsub { fill:#526179; font:12px system-ui; } footer { padding:3rem 0 1rem; color:var(--muted); font-size:.9rem; }
+    @media(max-width:900px){ .shell { display:block; padding:1rem; } aside { position:relative; top:auto; margin-bottom:1rem; } aside nav { display:flex; gap:.25rem; flex-wrap:wrap; } aside a { border:1px solid var(--line); } }
+    @media(max-width:560px){ .metric { grid-template-columns:1fr 1fr; } th,td { padding:.55rem; font-size:.9rem; } }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="eyebrow">Beginner-first guide to the refactored project</div>
+    <h1>Credit default prediction, explained from zero</h1>
+    <p>This is a plain-English guide to the application in this repository. It explains the business problem, the dataset, the code, the evaluation numbers, the deployment plan, and how to talk about the work in an interview.</p>
+  </header>
+  <div class="shell">
+    <aside><strong>Read in order</strong><nav>
+      <a href="#story">1. The story</a><a href="#why">2. Why this project</a><a href="#data">3. The data</a><a href="#pipeline">4. The pipeline</a><a href="#models">5. Models and training</a><a href="#metrics">6. Metrics</a><a href="#results">7. Current results</a><a href="#code">8. Code map</a><a href="#run">9. Run locally</a><a href="#deploy">10. Put the app online</a><a href="#interview">11. Interview answer</a><a href="#limits">12. Limits</a>
+    </nav></aside>
+    <main>
+      <section id="story">
+        <span class="tag">Start here</span>
+        <h2>What does this application do?</h2>
+        <p>A credit card company has old records of customers: their credit limit, recent bill amounts, recent payments, and whether they later failed to make the next month's payment. This project learns patterns from those old examples. Given a new record with the same kind of information, it returns an estimated probability of next-month payment default.</p>
+        <div class="callout"><strong>Default is not fraud.</strong> Fraud detection asks, “Is this transaction suspicious?” This project asks, “Based on this client's recent credit history, how likely is a missed next payment?” The two problems use different data and have different consequences.</div>
+        <div class="facts"><div class="fact"><b>30,000</b><span>historical client records</span></div><div class="fact"><b>23</b><span>raw input fields</span></div><div class="fact"><b>22.12%</b><span>recorded defaults</span></div><div class="fact"><b>0.7805</b><span>final-test ROC-AUC</span></div></div>
+      </section>
+
+      <section id="why">
+        <h2>Why choose this project?</h2>
+        <p>It is a strong learning project because it is a real tabular classification problem with a meaningful mistake trade-off. A missed defaulter may cause financial loss. Flagging someone who would have paid on time can create unnecessary review and unfair treatment. That trade-off forces you to go beyond “the model has good accuracy.”</p>
+        <p>It also gives you an end-to-end engineering story: clean data, reproducible training, several models, evaluation, one saved model artifact, a Flask website, a JSON API, tests, Docker, CI, and deployment. In an interview, that is much more convincing than saying you trained one notebook model.</p>
+        <div class="callout warning"><strong>The responsible framing:</strong> this is an educational risk-review prototype built from an academic 2005 Taiwan dataset. It must never be presented as a system that automatically approves or denies real people.</div>
+      </section>
+
+      <section id="data">
+        <h2>The dataset in ordinary language</h2>
+        <p>The source is UCI's Default of Credit Card Clients dataset. Every row represents one client. The target column, <code>default.payment.next.month</code>, is the historical answer: <code>1</code> means that client defaulted next month; <code>0</code> means they did not.</p>
+        <table><thead><tr><th>Input family</th><th>Examples</th><th>Why it may help</th></tr></thead><tbody>
+          <tr><td>Credit capacity</td><td><code>LIMIT_BAL</code></td><td>A bill of 50,000 has a different meaning for a limit of 60,000 than for a limit of 500,000.</td></tr>
+          <tr><td>Repayment history</td><td><code>PAY_0</code>, <code>PAY_2</code> … <code>PAY_6</code></td><td>Recent delay status can reveal a continuing repayment problem. <code>PAY_0</code> is the newest month.</td></tr>
+          <tr><td>Bill history</td><td><code>BILL_AMT1</code> … <code>BILL_AMT6</code></td><td>Balances show how much was owed across six months.</td></tr>
+          <tr><td>Payment history</td><td><code>PAY_AMT1</code> … <code>PAY_AMT6</code></td><td>Payments help distinguish paying down a balance from carrying it forward.</td></tr>
+          <tr><td>Coded demographics</td><td><code>SEX</code>, <code>EDUCATION</code>, <code>MARRIAGE</code>, <code>AGE</code></td><td>They exist in the academic data, but their use raises fairness concerns and needs review in any real setting.</td></tr>
+        </tbody></table>
+        <p>The raw file has 30,000 rows and 25 columns. The model uses 23 fields because <code>ID</code> is only an identifier and the target is the answer to learn, not an input. The default class is the minority class: 6,636 defaults and 23,364 non-defaults.</p>
+      </section>
+
+      <section id="pipeline">
+        <h2>What happens from CSV file to prediction?</h2>
+        <p>Think of the model as a student. Training data is the student's textbook with answers. Test data is the exam the student has never seen. We need the separation because scoring the student on the textbook tells us very little about how they will do on new examples.</p>
+        <div class="diagram"><svg viewBox="0 0 1040 210" role="img" aria-label="The project pipeline from raw UCI data to Flask prediction"><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8Z" fill="#1455c0"/></marker></defs><g stroke="#1455c0" stroke-width="2" marker-end="url(#arrow)"><path d="M145 95H190"/><path d="M335 95H380"/><path d="M525 95H570"/><path d="M715 95H760"/><path d="M900 95H945"/></g><g><rect class="flowbox" x="8" y="50" width="137" height="90" rx="10"/><rect class="flowbox" x="190" y="50" width="145" height="90" rx="10"/><rect class="flowbox" x="380" y="50" width="145" height="90" rx="10"/><rect class="flowbox" x="570" y="50" width="145" height="90" rx="10"/><rect class="flowbox" x="760" y="50" width="140" height="90" rx="10"/><rect class="flowbox" x="945" y="50" width="87" height="90" rx="10"/></g><g text-anchor="middle"><text class="flowtext" x="76" y="80">Raw UCI CSV</text><text class="flowsub" x="76" y="105">30,000 rows</text><text class="flowtext" x="262" y="78">Stratified split</text><text class="flowsub" x="262" y="101">60 / 20 / 20</text><text class="flowtext" x="452" y="78">Feature pipeline</text><text class="flowsub" x="452" y="101">clean, derive, scale</text><text class="flowtext" x="642" y="78">Model search</text><text class="flowsub" x="642" y="101">3-fold CV</text><text class="flowtext" x="830" y="78">Validation</text><text class="flowsub" x="830" y="101">choose threshold</text><text class="flowtext" x="989" y="78">Flask</text><text class="flowsub" x="989" y="101">web/API</text></g><text class="flowsub" x="520" y="180" text-anchor="middle">The untouched final test partition is evaluated once after the selection decisions are made.</text></svg></div>
+        <h3>Step 1: validate and clean fields</h3><p><code>validate_features()</code> checks that all 23 fields exist, converts values to numbers, rejects impossible credit limits and ages, and refuses negative category codes. This prevents a malformed web request from quietly becoming a meaningless prediction.</p>
+        <h3>Step 2: create useful derived features</h3><p>The project calculates credit utilisation, payment-to-bill ratios, average and maximum payment delay, the number of delayed months, payment and bill averages, and trends. For example, latest bill divided by credit limit expresses the same debt in a more useful context. A 50,000 bill is 50% utilisation at a 100,000 limit.</p>
+        <h3>Step 3: prepare values for models</h3><p>Numeric values are median-imputed and standardized. Categorical codes are most-frequent-imputed and one-hot encoded. All of this is inside the saved scikit-learn pipeline. The important reason is consistency: the model sees exactly the same transformations during training and on the website.</p>
+        <div class="callout"><strong>Data leakage:</strong> leakage happens when information from validation or test rows helps fit a transformation or model. It produces flattering numbers that disappear in real use. The pipeline is fitted only on training folds inside model search.</div>
+      </section>
+
+      <section id="models">
+        <h2>How the model was chosen</h2>
+        <p>Three different classifiers compete. Logistic Regression is a simple baseline that combines inputs with learned weights. Random Forest averages many decision trees. CatBoost is a boosted-tree method: it builds trees in sequence, where later trees focus on mistakes earlier trees made. Tree models can learn interactions, such as repeated payment delays combined with high utilisation.</p>
+        <p>The code uses shuffled <code>StratifiedKFold</code> cross-validation. “Stratified” means every fold keeps roughly the same default rate. The standard run uses three folds. Each candidate has a small parameter grid, and the search chooses its best settings using ROC-AUC on training folds only.</p>
+        <table><thead><tr><th>Candidate</th><th>Cross-validation ROC-AUC</th><th>Cross-validation average precision</th><th>Result</th></tr></thead><tbody>
+          <tr><td>Logistic Regression</td><td>0.7629</td><td>0.5062</td><td>Baseline</td></tr><tr><td>Random Forest</td><td>0.7844</td><td>0.5574</td><td>Close competitor</td></tr><tr><td>CatBoost</td><td>0.7876</td><td>0.5645</td><td>Selected</td></tr>
+        </tbody></table>
+        <p>The selected CatBoost settings are <code>depth=6</code>, <code>iterations=150</code>, <code>learning_rate=0.03</code>, and <code>l2_leaf_reg=3</code>. Depth limits each tree's complexity; iterations is the number of trees; learning rate controls how strongly each tree changes the result; L2 regularization helps discourage overfitting.</p>
+      </section>
+
+      <section id="metrics">
+        <h2>Metrics: what the numbers mean</h2>
+        <p>A prediction becomes a class only after choosing a threshold. The application uses 0.245, selected on validation data to maximize F1. A probability at or above 24.5% creates a <em>review flag</em>; it is not an automatic lending decision.</p>
+        <h3>Confusion matrix</h3>
+        <table><thead><tr><th></th><th>Actual no default</th><th>Actual default</th></tr></thead><tbody><tr><th>Predicted no default</th><td>True negative (TN)</td><td>False negative (FN): a default was missed</td></tr><tr><th>Predicted review flag</th><td>False positive (FP): an unnecessary flag</td><td>True positive (TP): a default was caught</td></tr></tbody></table>
+        <table><thead><tr><th>Metric</th><th>Formula</th><th>Plain meaning</th><th>Why it matters here</th></tr></thead><tbody>
+          <tr><td>Accuracy</td><td class="formula">(TP + TN) / all cases</td><td>How often the final yes/no decision is correct.</td><td>Useful context, but it can look good by predicting “no default” for almost everyone. The data has 77.88% non-defaults.</td></tr>
+          <tr><td>Precision</td><td class="formula">TP / (TP + FP)</td><td>Of people we flagged, how many actually defaulted?</td><td>Higher precision means fewer unnecessary review flags.</td></tr>
+          <tr><td>Recall</td><td class="formula">TP / (TP + FN)</td><td>Of people who defaulted, how many did we catch?</td><td>Higher recall means fewer missed defaults.</td></tr>
+          <tr><td>Specificity</td><td class="formula">TN / (TN + FP)</td><td>Of people who did not default, how many did we leave unflagged?</td><td>It protects against flooding operations with false alarms.</td></tr>
+          <tr><td>F1</td><td class="formula">2 × precision × recall / (precision + recall)</td><td>One score that falls if either precision or recall is weak.</td><td>We used it to choose the operating threshold, where we need a balance of caught defaults and review burden.</td></tr>
+          <tr><td>ROC-AUC</td><td class="formula">area under ROC curve</td><td>How well the model ranks a random defaulter above a random non-defaulter across all thresholds.</td><td>We use it to compare candidates without committing to a single threshold. 0.5 is random ranking; 1.0 is perfect ranking.</td></tr>
+          <tr><td>Average precision / PR-AUC summary</td><td class="formula">precision-recall curve summary</td><td>How precision changes while recall changes over thresholds.</td><td>Especially helpful when defaults are less common than non-defaults, because it concentrates on the positive class.</td></tr>
+          <tr><td>Balanced accuracy</td><td class="formula">(recall + specificity) / 2</td><td>Average quality on each class, so the majority class cannot dominate the score.</td><td>Sanity check for an imbalanced target.</td></tr>
+          <tr><td>Log loss</td><td class="formula">penalty for wrong/confident probabilities</td><td>Scores the quality of probabilities, not only the final class.</td><td>A 90% prediction that is wrong should hurt more than a 51% prediction that is wrong.</td></tr>
+        </tbody></table>
+        <div class="callout warning"><strong>Which metric is “the most important”?</strong> There is no universal winner. ROC-AUC is the training selection metric because it compares ranking ability. Precision, recall, and F1 describe the chosen review threshold. A real bank would set the threshold using documented costs, capacity, fairness, and regulation rather than copying this educational F1 policy.</div>
+        <h3>Try the confusion-matrix calculator</h3><p>These start with the current final-test counts. Change them to see how the metrics react.</p>
+        <div class="card"><div class="metric"><label>TN<input id="tn" type="number" value="3858" min="0"></label><label>FP<input id="fp" type="number" value="815" min="0"></label><label>FN<input id="fn" type="number" value="531" min="0"></label><label>TP<input id="tp" type="number" value="796" min="0"></label></div><button onclick="calculate()">Calculate metrics</button><div id="calc" class="result" aria-live="polite"></div></div>
+      </section>
+
+      <section id="results">
+        <h2>Current final-test result</h2>
+        <p>After choosing CatBoost and the 0.245 threshold without touching the final test partition, the saved artifact was evaluated on 6,000 held-out records.</p>
+        <table><thead><tr><th>Metric</th><th>Value</th><th>Interpretation</th></tr></thead><tbody>
+          <tr><td>ROC-AUC</td><td>0.7805</td><td>The model ranks defaults above non-defaults substantially better than random, though it is far from perfect.</td></tr><tr><td>Average precision</td><td>0.5582</td><td>The precision-recall trade-off is meaningfully better than the 22.12% default base rate.</td></tr><tr><td>Precision</td><td>0.4941</td><td>About 49 out of every 100 review flags corresponded to a recorded default in this test split.</td></tr><tr><td>Recall</td><td>0.5998</td><td>About 60 out of every 100 recorded defaults were flagged.</td></tr><tr><td>F1</td><td>0.5419</td><td>The precision-recall balance at the chosen threshold.</td></tr><tr><td>Balanced accuracy</td><td>0.7127</td><td>Average of default recall and non-default specificity.</td></tr><tr><td>Log loss</td><td>0.4298</td><td>Probability error on the held-out test set. Lower is better.</td></tr>
+        </tbody></table>
+        <p>The final confusion matrix is TN=3,858, FP=815, FN=531, TP=796. The project also produces ROC, precision-recall, calibration diagnostic, threshold, and SHAP plots under <code>reports/</code>.</p>
+      </section>
+
+      <section id="code">
+        <h2>Where the Python code lives</h2>
+        <table><thead><tr><th>File</th><th>Job</th></tr></thead><tbody>
+          <tr><td><code>src/credit_risk/config.py</code></td><td>One source for dataset, model, report paths and the exact 23 input columns.</td></tr>
+          <tr><td><code>src/credit_risk/features.py</code></td><td>Input validation, feature engineering, and the scikit-learn preprocessor.</td></tr>
+          <tr><td><code>src/credit_risk/training.py</code></td><td>Split data, compare models, choose the validation threshold, evaluate test data, and save the artifact plus reports.</td></tr>
+          <tr><td><code>src/credit_risk/inference.py</code></td><td>Load the saved pipeline once and return a probability, label, threshold, and disclaimer.</td></tr>
+          <tr><td><code>src/credit_risk/explain.py</code></td><td>Create global SHAP feature-importance output for the selected CatBoost model.</td></tr>
+          <tr><td><code>application.py</code></td><td>Flask routes for the dashboard, form, JSON API, favicon, and health check.</td></tr>
+          <tr><td><code>templates/</code></td><td>The browser interface. It never reimplements ML logic; it sends values to Flask.</td></tr>
+        </tbody></table>
+        <h3>The central prediction idea</h3>
+        <pre><code># The saved pipeline includes the feature engineer and the CatBoost classifier.
+features = validate_features(pd.DataFrame([payload]))
+probability = float(pipeline.predict_proba(features)[0, 1])
+prediction = int(probability &gt;= metadata["threshold"])</code></pre>
+        <p><code>predict_proba(...)[0, 1]</code> means “for the first submitted row, give me the probability of class 1,” where class 1 is recorded default. The code then compares it to the saved threshold. Keeping the threshold in model metadata means the website does not silently use a different rule from the evaluation run.</p>
+      </section>
+
+      <section id="run">
+        <h2>Run the project on your own computer</h2>
+        <pre><code>python -m venv venv
+# Windows PowerShell
+.\venv\Scripts\Activate.ps1
+pip install -r requirements-dev.txt
+
+# Use the already committed, tested model artifact and start the website
+python application.py
+
+# In another terminal, check the service
+curl http://127.0.0.1:5000/health
+
+# Optional: reproduce training and reports
+python -m src.credit_risk.training --seed 42
+python -m src.credit_risk.explain
+pytest -q</code></pre>
+        <p>Open <code>http://127.0.0.1:5000</code>. The form is for demonstration. The JSON endpoint is <code>POST /api/predict</code>, and <code>GET /health</code> confirms that the model artifact loaded.</p>
+      </section>
+
+      <section id="deploy">
+        <h2>How to put the real app online</h2>
+        <p><strong>Recommendation: deploy the Flask application on Render as a Docker web service.</strong> The repository now contains a <code>Dockerfile</code> that runs Gunicorn and honors the hosting platform's <code>PORT</code> value. It includes the already-evaluated model artifact instead of silently retraining during deployment. <code>render.yaml</code> defines a Docker web service, automatic deployment after CI checks, and the <code>/health</code> health endpoint.</p>
+        <table><thead><tr><th>Host</th><th>Fit for this app</th><th>Recommendation</th></tr></thead><tbody>
+          <tr><td>Render</td><td>Runs a normal Docker/Flask web service, supports health checks, environment ports, and Git-based deploys.</td><td><strong>Use this first.</strong> It matches the current Docker deployment design.</td></tr>
+          <tr><td>Hugging Face Spaces</td><td>Can run custom Docker containers and makes a good ML portfolio demo.</td><td>Use as an optional public demo later. It needs a Space-specific README configuration and port 7860.</td></tr>
+          <tr><td>Vercel</td><td>Can deploy Flask through Python serverless functions, but the app is loaded as a serverless function.</td><td>Keep it for a static portfolio or documentation. It is not the first choice for this model-loaded Flask application.</td></tr>
+        </tbody></table>
+        <h3>Render deployment steps</h3>
+        <ol><li>Push the current <code>main</code> branch to GitHub. The repository is already configured for this.</li><li>Create a Render account and connect GitHub.</li><li>Click <strong>New → Blueprint</strong>, select this repository, and let Render read <code>render.yaml</code>. Alternatively create a Docker Web Service and select the root <code>Dockerfile</code>.</li><li>Confirm the service name, choose a region, and deploy. Render supplies <code>PORT</code>; the Docker command binds Gunicorn to it.</li><li>When the deploy completes, open <code>https://your-service.onrender.com/health</code>. It should return <code>{"status":"ok", ...}</code>. Then open the root URL for the form.</li><li>Keep auto-deploy after CI checks enabled. A future GitHub push runs tests, then Render can deploy the passing revision.</li></ol>
+        <div class="callout warning"><strong>Free-tier expectation:</strong> free web services can sleep after inactivity. The first request after a sleep may be slow. That is acceptable for a portfolio demo; use a paid service and proper monitoring if you need reliable availability.</div>
+        <h3>What “reproducible online” means here</h3>
+        <p>Every visitor receives predictions from the same committed <code>credit_risk_pipeline.joblib</code>, with the same saved threshold and pinned package versions. Anyone can reproduce the training workflow locally using the included raw UCI file and seed 42. It does not mean their result must be identical across every operating system and future hardware/library release; that is why the deployed artifact and pinned dependencies are important.</p>
+      </section>
+
+      <section id="interview">
+        <h2>A natural interview explanation</h2>
+        <div class="card"><p>“I built a credit-risk prediction prototype using the UCI Default of Credit Card Clients dataset. The problem is to estimate the chance that a client will default next month from their credit limit, recent payment status, bill amounts, and payment amounts. I treated it as a binary classification problem, not fraud detection.</p><p>I built a scikit-learn pipeline that validates the 23 inputs, creates repayment and utilisation features, imputes and scales numeric values, and encodes categories. I split the data into stratified training, validation, and final test sets. I compared Logistic Regression, Random Forest, and CatBoost with three-fold cross-validation, using ROC-AUC to choose the best ranking model. CatBoost won.</p><p>I selected the operational threshold on validation data using F1 rather than assuming 0.5. On the untouched 6,000-row test set, the model reached 0.7805 ROC-AUC, 0.5998 recall, and 0.4941 precision at the 0.245 review threshold. I packaged the full pipeline into one joblib artifact and served it through Flask, a browser form, and a JSON API. I also added tests, Docker, CI, health checks, and SHAP global explanations. I would not use it for automatic lending because the data is historical and limited, and production would need fairness, calibration, governance, and monitoring.”</p></div>
+        <details><summary>Why did you use ROC-AUC to select the model?</summary><p>It measures ranking quality over every possible threshold. At model-selection time, I want to know which candidate separates likely defaults from non-defaults most reliably before deciding how many cases an operations team can review.</p></details>
+        <details><summary>Why is accuracy not enough?</summary><p>Because 77.88% of rows are non-default. A useless model that always predicts no default would already look 77.88% accurate while catching none of the defaults. Recall, precision, PR metrics, balanced accuracy, and the confusion matrix expose that failure.</p></details>
+        <details><summary>Why is the threshold 0.245 instead of 0.5?</summary><p>The threshold is a business policy layer. In this prototype it is the point that maximized validation F1. A real institution would choose it from the cost of a missed default, the cost of reviewing a customer, operational capacity, fairness analysis, and regulation.</p></details>
+      </section>
+
+      <section id="limits">
+        <h2>What remains outside the scope</h2>
+        <ul><li>No model can establish that a person will default. It produces a statistical estimate from historical patterns.</li><li>The dataset describes one historical population. It does not prove that the model works today, in another country, or for a bank's customer base.</li><li>SHAP describes how the model used inputs in a sample. It does not prove causation or solve adverse-action explanation requirements.</li><li>Production use needs authentication, rate limiting, secure logging, fairness and bias testing, calibration monitoring, drift detection, a retraining approval process, privacy review, human review, and an appeal process.</li></ul>
+      </section>
+      <footer>Current source of truth: <code>src/credit_risk/</code>, <code>models/model_metadata.json</code>, <code>MODEL_CARD.md</code>, and the tests. This guide describes the refactored application, not the earlier archived implementation.</footer>
+    </main>
+  </div>
+  <script>
+    function calculate() {
+      const get = id => Math.max(0, Number(document.getElementById(id).value) || 0);
+      const tn=get('tn'), fp=get('fp'), fn=get('fn'), tp=get('tp'), total=tn+fp+fn+tp;
+      const safe=(numerator, denominator)=>denominator ? numerator/denominator : 0;
+      const precision=safe(tp,tp+fp), recall=safe(tp,tp+fn), specificity=safe(tn,tn+fp);
+      const f1=safe(2*precision*recall,precision+recall), accuracy=safe(tp+tn,total), balanced=(recall+specificity)/2;
+      const pct=n=>(n*100).toFixed(1)+'%';
+      document.getElementById('calc').textContent=`Accuracy ${pct(accuracy)} · Precision ${pct(precision)} · Recall ${pct(recall)} · Specificity ${pct(specificity)} · F1 ${pct(f1)} · Balanced accuracy ${pct(balanced)}`;
+    }
+    calculate();
+  </script>
+</body>
+</html>

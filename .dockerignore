@@ -4,6 +4,5 @@ __pycache__
 .pytest_cache
 archive
 reports
-models
 catboost_info
 *.pyc
