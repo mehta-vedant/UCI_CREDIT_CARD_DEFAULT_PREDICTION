@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, Response, jsonify, render_template, request
 
 from src.credit_risk.config import RAW_FEATURE_COLUMNS
 from src.credit_risk.inference import load_assets, predict
@@ -18,6 +18,19 @@ def form_payload() -> dict[str, str | None]:
 @app.get("/")
 def index():
     return render_template("index.html")
+
+
+@app.get("/favicon.ico")
+def favicon():
+    """Serve a tiny local icon so the browser has no noisy missing-resource error."""
+    icon = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
+        '<rect width="64" height="64" rx="14" fill="#2563eb"/>'
+        '<path d="M32 10 50 17v13c0 12-7 20-18 25C21 50 14 42 14 30V17z" fill="white"/>'
+        '<path d="m24 32 5 5 11-12" fill="none" stroke="#2563eb" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>'
+        '</svg>'
+    )
+    return Response(icon, mimetype="image/svg+xml", headers={"Cache-Control": "public, max-age=86400"})
 
 
 @app.route("/predictdata", methods=["GET", "POST"])

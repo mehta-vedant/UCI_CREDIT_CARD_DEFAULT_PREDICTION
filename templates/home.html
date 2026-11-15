@@ -920,6 +920,15 @@
         const totalSteps = 3;
 
         function changeStep(dir) {
+            if (dir > 0) {
+                const currentFields = document.querySelectorAll('#step' + currentStep + ' input, #step' + currentStep + ' select');
+                for (const field of currentFields) {
+                    if (!field.checkValidity()) {
+                        field.reportValidity();
+                        return;
+                    }
+                }
+            }
             const newStep = currentStep + dir;
             if (newStep < 1 || newStep > totalSteps) return;
             document.getElementById('step' + currentStep).classList.remove('active');
