@@ -1,8 +1,0 @@
-# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
-services:
-  - type: web
-    runtime: docker
-    name: uci-credit-risk-predictor
-    plan: free
-    healthCheckPath: /health
-    autoDeployTrigger: checksPass

@@ -87,7 +87,7 @@ The image includes the committed, evaluated pipeline in `models/`, so the deploy
 
 ## Deploy the application
 
-Use Render as the primary host for the Flask application. The included `render.yaml` creates a Docker web service, waits for GitHub CI checks, and verifies `GET /health` before routing traffic. See the [refactored project guide](project_guide/index.html#deploy) for the click-by-click deployment path and the comparison with Hugging Face Spaces and Vercel.
+Use Render as the primary host for the Flask application. In the Render dashboard, create a regular Docker Web Service from this GitHub repository, select the root `Dockerfile`, and set `GET /health` as the health-check path. See the [refactored project guide](project_guide/index.html#deploy) for the click-by-click deployment path and the comparison with Hugging Face Spaces and Vercel.
 
 ## Responsible use and current limitations
 
