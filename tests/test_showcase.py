@@ -15,3 +15,12 @@ def test_showcase_summary_matches_verified_raw_data():
     assert summary["default_count"] == 6636
     assert summary["default_rate"] == 0.2212
     assert summary["target_correlations"][0]["feature"] == "PAY_0"
+
+
+def test_showcase_creates_an_eda_heatmap(tmp_path):
+    from src.credit_risk.showcase import create_eda_charts
+
+    data = pd.read_csv(DATA_PATH)
+    summary = build_summary(data)
+    create_eda_charts(data, summary, tmp_path)
+    assert (tmp_path / "correlation_heatmap.png").exists()

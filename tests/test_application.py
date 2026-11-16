@@ -22,13 +22,18 @@ def test_favicon_is_served_locally():
 def test_project_showcase_and_aggregate_assets_are_available():
     response = app.test_client().get("/project")
     assert response.status_code == 200
-    assert b"Data quality and exploratory analysis" in response.data
-    assert b"Three models were compared" in response.data
+    assert b"Authentic EDA from the active CSV" in response.data
+    assert b"compare feature importance across models" in response.data
 
     asset = app.test_client().get("/static/project-assets/summary.json")
     assert asset.status_code == 200
     assert asset.json["rows"] == 30000
     assert asset.json["missing_cells"] == 0
+
+    heatmap = app.test_client().get("/static/project-assets/correlation_heatmap.png")
+    importance = app.test_client().get("/static/project-assets/model_feature_importance.png")
+    assert heatmap.status_code == 200
+    assert importance.status_code == 200
 
 
 def test_beginner_course_is_served_by_flask():

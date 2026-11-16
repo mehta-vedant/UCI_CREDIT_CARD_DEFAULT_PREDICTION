@@ -38,7 +38,7 @@ def project_showcase():
     if not SHOWCASE_SUMMARY_PATH.exists():
         return "Project showcase assets are missing. Run `python -m src.credit_risk.showcase`.", 503
     summary = json.loads(SHOWCASE_SUMMARY_PATH.read_text(encoding="utf-8"))
-    return render_template("project.html", summary=summary)
+    return render_template("analysis.html", summary=summary)
 
 
 @app.get("/guide")

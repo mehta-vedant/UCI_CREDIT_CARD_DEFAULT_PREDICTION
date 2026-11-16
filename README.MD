@@ -12,7 +12,7 @@ This is an educational risk-estimation system. It is not an automated lending, d
 - Compares Logistic Regression, Random Forest, and CatBoost through shuffled stratified cross-validation and a real parameter grid.
 - Uses a three-way stratified split: 60% training, 20% validation, and 20% final test data.
 - Selects the model using training cross-validation, selects an F1 threshold on validation data, and reports final metrics once on the untouched test partition.
-- Produces ROC, precision-recall, calibration, and threshold-analysis charts.
+- Produces EDA distributions/correlation heatmap, ROC, precision-recall, calibration, threshold-analysis, candidate-model importance, and CatBoost SHAP charts.
 - Saves a serialized inference pipeline plus metadata, then serves it through Flask HTML and JSON endpoints.
 
 ## Project layout

@@ -156,6 +156,49 @@ def save_plots(y_true: pd.Series, probabilities: np.ndarray, threshold: float) -
     plt.close()
 
 
+def save_model_feature_importance(models: dict[str, Pipeline]) -> dict[str, dict]:
+    """Save comparable *descriptive* importance views for every fitted candidate.
+
+    Logistic-regression coefficients are comparable only after the project's
+    standardisation step, so their absolute values are shown. Tree models use
+    their built-in split-based importance. These methods answer different
+    questions and neither one is a causal explanation.
+    """
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    results: dict[str, dict] = {}
+    fig, axes = plt.subplots(1, len(models), figsize=(18, 5.5), sharex=False)
+    if len(models) == 1:
+        axes = [axes]
+
+    for axis, (name, pipeline) in zip(axes, models.items()):
+        transformer = pipeline.named_steps["preprocess"].named_steps["columns"]
+        feature_names = [
+            feature.removeprefix("numeric__").removeprefix("categorical__")
+            for feature in transformer.get_feature_names_out()
+        ]
+        model = pipeline.named_steps["model"]
+        if name == "logistic_regression":
+            importance = np.abs(model.coef_.ravel())
+            method = "absolute standardized logistic-regression coefficient"
+        else:
+            importance = np.asarray(model.feature_importances_, dtype=float)
+            method = "built-in tree split importance"
+        ranking = pd.Series(importance, index=feature_names).sort_values(ascending=False).head(12)
+        results[name] = {
+            "method": method,
+            "top_features": [{"feature": feature, "importance": float(score)} for feature, score in ranking.items()],
+        }
+        axis.barh(ranking.index[::-1], ranking.values[::-1], color="#315ecb")
+        axis.set_title(name.replace("_", " ").title())
+        axis.set_xlabel("Absolute coefficient" if name == "logistic_regression" else "Split importance")
+        axis.tick_params(axis="y", labelsize=8)
+    fig.suptitle("Candidate-model feature importance (training-fitted models)", y=1.02, fontsize=14)
+    fig.tight_layout()
+    fig.savefig(REPORT_DIR / "model_feature_importance.png", dpi=160, bbox_inches="tight")
+    plt.close(fig)
+    return results
+
+
 def train(data_path: Path = DATA_PATH, random_state: int = 42, full_search: bool = False) -> dict:
     data = pd.read_csv(data_path)
     X = validate_features(data[RAW_FEATURE_COLUMNS])
@@ -168,16 +211,18 @@ def train(data_path: Path = DATA_PATH, random_state: int = 42, full_search: bool
     )
     searches = candidate_searches(random_state, full_search=full_search)
     comparison = {}
+    fitted_models = {}
     for name, search in searches.items():
         print(f"Tuning {name}...", flush=True)
         search.fit(X_train, y_train)
+        fitted_models[name] = search.best_estimator_
         comparison[name] = {
             "cv_roc_auc": float(search.best_score_),
             "cv_average_precision": float(search.cv_results_["mean_test_average_precision"][search.best_index_]),
             "best_params": search.best_params_,
         }
     winner_name = max(comparison, key=lambda name: comparison[name]["cv_roc_auc"])
-    winner = searches[winner_name].best_estimator_
+    winner = fitted_models[winner_name]
     validation_probabilities = winner.predict_proba(X_validation)[:, 1]
     threshold, validation_f1 = select_threshold(y_validation, validation_probabilities)
     test_probabilities = winner.predict_proba(X_test)[:, 1]
@@ -185,6 +230,7 @@ def train(data_path: Path = DATA_PATH, random_state: int = 42, full_search: bool
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     joblib.dump(winner, MODEL_PATH)
     save_plots(y_validation, validation_probabilities, threshold)
+    model_feature_importance = save_model_feature_importance(fitted_models)
     metadata = {
         "project": "UCI credit-card default prediction",
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -197,6 +243,7 @@ def train(data_path: Path = DATA_PATH, random_state: int = 42, full_search: bool
         "raw_feature_columns": RAW_FEATURE_COLUMNS,
         "selected_model": winner_name,
         "model_comparison": comparison,
+        "model_feature_importance": model_feature_importance,
         "threshold": threshold,
         "validation_f1_at_threshold": validation_f1,
         "test_metrics": asdict(final_metrics),

@@ -171,6 +171,167 @@
           "model__learning_rate": 0.03
         }
       }
+    },
+    "feature_importance": {
+      "logistic_regression": {
+        "method": "absolute standardized logistic-regression coefficient",
+        "top_features": [
+          {
+            "feature": "EDUCATION_4",
+            "importance": 0.8565933604639571
+          },
+          {
+            "feature": "months_with_delays",
+            "importance": 0.809341884133435
+          },
+          {
+            "feature": "max_payment_delay",
+            "importance": 0.2568662808494439
+          },
+          {
+            "feature": "LIMIT_BAL",
+            "importance": 0.2479054956122852
+          },
+          {
+            "feature": "high_utilization_1",
+            "importance": 0.24632408055801433
+          },
+          {
+            "feature": "PAY_0",
+            "importance": 0.23279277180487773
+          },
+          {
+            "feature": "BILL_AMT3",
+            "importance": 0.15485345221537378
+          },
+          {
+            "feature": "BILL_AMT1",
+            "importance": 0.14700334953678773
+          },
+          {
+            "feature": "ever_paid_early_1",
+            "importance": 0.13383039599202887
+          },
+          {
+            "feature": "BILL_AMT6",
+            "importance": 0.12446481274522399
+          },
+          {
+            "feature": "MARRIAGE_2",
+            "importance": 0.12193474246955775
+          },
+          {
+            "feature": "PAY_AMT2",
+            "importance": 0.1211557991762829
+          }
+        ]
+      },
+      "random_forest": {
+        "method": "built-in tree split importance",
+        "top_features": [
+          {
+            "feature": "max_payment_delay",
+            "importance": 0.1241532577759403
+          },
+          {
+            "feature": "months_with_delays",
+            "importance": 0.12327743039634763
+          },
+          {
+            "feature": "PAY_0",
+            "importance": 0.11443648773989795
+          },
+          {
+            "feature": "avg_payment_status",
+            "importance": 0.09705365047743417
+          },
+          {
+            "feature": "PAY_2",
+            "importance": 0.04457178783447123
+          },
+          {
+            "feature": "PAY_3",
+            "importance": 0.03765098298623311
+          },
+          {
+            "feature": "avg_payment_amount",
+            "importance": 0.02690442672484137
+          },
+          {
+            "feature": "LIMIT_BAL",
+            "importance": 0.026779070523685913
+          },
+          {
+            "feature": "credit_utilization",
+            "importance": 0.024886523633646886
+          },
+          {
+            "feature": "PAY_4",
+            "importance": 0.022135773285618554
+          },
+          {
+            "feature": "avg_bill_amount",
+            "importance": 0.02202299602554932
+          },
+          {
+            "feature": "PAY_AMT1",
+            "importance": 0.02077961308558435
+          }
+        ]
+      },
+      "catboost": {
+        "method": "built-in tree split importance",
+        "top_features": [
+          {
+            "feature": "PAY_0",
+            "importance": 20.20481779299065
+          },
+          {
+            "feature": "max_payment_delay",
+            "importance": 9.716725311322184
+          },
+          {
+            "feature": "LIMIT_BAL",
+            "importance": 5.740804571309556
+          },
+          {
+            "feature": "credit_utilization",
+            "importance": 5.515979778846386
+          },
+          {
+            "feature": "avg_payment_status",
+            "importance": 4.255143884754026
+          },
+          {
+            "feature": "months_with_delays",
+            "importance": 3.64787962103532
+          },
+          {
+            "feature": "avg_payment_amount",
+            "importance": 3.430159143506912
+          },
+          {
+            "feature": "bill_amount_trend",
+            "importance": 3.2022485287219515
+          },
+          {
+            "feature": "BILL_AMT1",
+            "importance": 3.1280289066776654
+          },
+          {
+            "feature": "PAY_AMT6",
+            "importance": 2.331948254134904
+          },
+          {
+            "feature": "high_utilization_1",
+            "importance": 2.2281352962812675
+          },
+          {
+            "feature": "PAY_AMT1",
+            "importance": 2.102013375500467
+          }
+        ]
+      }
     }
   }
 }

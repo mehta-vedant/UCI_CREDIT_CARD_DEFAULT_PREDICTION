@@ -118,6 +118,19 @@ def create_eda_charts(data: pd.DataFrame, summary: dict, output_dir: Path) -> No
     plt.xlabel("Pearson correlation with target")
     _save_figure(output_dir / "target_correlations.png")
 
+    heatmap_columns = [
+        TARGET_COLUMN, "LIMIT_BAL", "AGE", *["PAY_0", "PAY_2", "PAY_3", "PAY_4", "PAY_5", "PAY_6"],
+        "BILL_AMT1", "PAY_AMT1",
+    ]
+    heatmap = data[heatmap_columns].corr(numeric_only=True)
+    fig, axis = plt.subplots(figsize=(11, 9))
+    image = axis.imshow(heatmap, cmap="coolwarm", vmin=-1, vmax=1)
+    axis.set_xticks(range(len(heatmap.columns)), heatmap.columns, rotation=45, ha="right")
+    axis.set_yticks(range(len(heatmap.index)), heatmap.index)
+    axis.set_title("Raw-feature correlation heatmap")
+    fig.colorbar(image, ax=axis, label="Pearson correlation")
+    _save_figure(output_dir / "correlation_heatmap.png")
+
 
 def create_model_comparison_chart(metadata: dict, output_dir: Path) -> None:
     comparison = metadata["model_comparison"]
@@ -148,6 +161,7 @@ def generate_showcase_assets(
         "threshold": metadata["threshold"],
         "test_metrics": metadata["test_metrics"],
         "comparison": metadata["model_comparison"],
+        "feature_importance": metadata.get("model_feature_importance", {}),
     }
     (output_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     create_eda_charts(data, summary, output_dir)
@@ -156,6 +170,7 @@ def generate_showcase_assets(
         "evaluation_curves.png": "evaluation_curves.png",
         "threshold_analysis.png": "threshold_analysis.png",
         "shap_summary.png": "shap_summary.png",
+        "model_feature_importance.png": "model_feature_importance.png",
     }.items():
         source = REPORT_DIR / source_name
         if source.exists():
