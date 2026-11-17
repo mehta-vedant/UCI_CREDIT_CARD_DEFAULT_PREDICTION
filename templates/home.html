@@ -181,6 +181,7 @@
         .field-row.cols-2 { grid-template-columns: 1fr 1fr; }
         .field-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
         .field-group { display: flex; flex-direction: column; }
+        .field-help { margin-top: 6px; color: var(--text-dim); font-size: 0.78rem; line-height: 1.35; }
         .field-label {
             font-size: 0.8rem; font-weight: 500; color: var(--text-dim);
             margin-bottom: 8px;
@@ -448,6 +449,8 @@
             font-size: 0.88rem;
             font-weight: 600;
             cursor: pointer;
+            display: inline-block;
+            text-decoration: none;
             transition: all 0.2s;
         }
         .btn-reset:hover { border-color: var(--accent); color: var(--text); }
@@ -495,7 +498,7 @@
         <div class="result-card">
             <div class="result-header">
                 <h2>Prediction Result</h2>
-                <p class="result-subtitle">CatBoost risk estimate</p>
+                <p class="result-subtitle">{{ model_name }} risk estimate</p>
 
                 <div class="gauge-container">
                     <svg class="gauge-svg" viewBox="0 0 200 120">
@@ -560,7 +563,7 @@
         </div>
 
         <div class="new-prediction">
-            <button class="btn-reset" onclick="window.location.reload()">Run New Prediction</button>
+            <a class="btn-reset" href="{{ url_for('predict_datapoint') }}">Run New Prediction</a>
         </div>
     </div>
 
@@ -611,7 +614,8 @@
                                 <span class="tooltip-content">The approved credit limit in New Taiwan Dollars. Higher limits typically indicate better creditworthiness but also higher exposure.</span>
                             </span>
                         </label>
-                        <input type="number" name="LIMIT_BAL" id="LIMIT_BAL" placeholder="e.g. 200000" min="10000" max="1000000" step="10000" required>
+                        <input type="number" name="LIMIT_BAL" id="LIMIT_BAL" placeholder="e.g. 205500" min="10000" max="1000000" step="1" inputmode="numeric" required aria-describedby="credit-limit-help">
+                        <small id="credit-limit-help" class="field-help">Enter any whole NT$ amount from 10,000 to 1,000,000; it does not need to be a multiple of 10,000.</small>
                     </div>
                     <div class="field-group">
                         <label class="field-label" for="AGE">

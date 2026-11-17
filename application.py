@@ -108,6 +108,7 @@ def predict_datapoint():
             "home.html", results=result["label"],
             probability=round(result["default_probability"] * 100, 1),
             threshold=round(result["threshold"] * 100, 1),
+            model_name=result["model"].replace("_", " ").title(),
             risk_level="Review recommended" if result["prediction"] else "No review flag",
             risk_color="high" if result["prediction"] else "low",
             disclaimer=result["disclaimer"],

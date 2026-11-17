@@ -51,6 +51,14 @@ def test_interview_preparation_is_served_from_active_metadata():
     assert b"Explain this project clearly" in response.data
 
 
+def test_prediction_form_accepts_any_whole_credit_limit_and_new_prediction_uses_get():
+    response = app.test_client().get("/predictdata")
+    assert response.status_code == 200
+    assert b'step="1"' in response.data
+    assert b"does not need to be a multiple of 10,000" in response.data
+    assert b'window.location.reload()' not in response.data
+
+
 def test_api_errors_are_json_and_security_headers_are_set():
     client = app.test_client()
     response = client.get("/api/does-not-exist")
