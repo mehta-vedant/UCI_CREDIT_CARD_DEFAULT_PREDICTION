@@ -137,7 +137,10 @@ def create_model_comparison_chart(metadata: dict, output_dir: Path) -> None:
     labels = [name.replace("_", " ").title() for name in comparison]
     scores = [comparison[name]["cv_roc_auc"] for name in comparison]
     plt.figure(figsize=(7.5, 4))
-    bars = plt.bar(labels, scores, color=["#94a3b8", "#64748b", "#315ecb"])
+    colors = ["#94a3b8"] * len(labels)
+    if labels:
+        colors[scores.index(max(scores))] = "#315ecb"
+    bars = plt.bar(labels, scores, color=colors)
     plt.ylim(0.5, max(scores) + 0.04)
     plt.ylabel("Mean cross-validation ROC-AUC")
     plt.title("Model selection on training folds")
@@ -163,6 +166,15 @@ def generate_showcase_assets(
         "comparison": metadata["model_comparison"],
         "feature_importance": metadata.get("model_feature_importance", {}),
     }
+    summary["benchmark"] = {
+        "experiment": metadata.get("experiment"),
+        "selection_metric": metadata.get("selection_metric"),
+        "selected_balance_strategy": metadata.get("selected_balance_strategy"),
+        "screening": metadata.get("screening", []),
+        "tuning": metadata.get("tuning", []),
+        "balance_strategy_ablation": metadata.get("balance_strategy_ablation", []),
+        "calibration": metadata.get("calibration", {}),
+    }
     (output_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     create_eda_charts(data, summary, output_dir)
     create_model_comparison_chart(metadata, output_dir)
@@ -171,6 +183,7 @@ def generate_showcase_assets(
         "threshold_analysis.png": "threshold_analysis.png",
         "shap_summary.png": "shap_summary.png",
         "model_feature_importance.png": "model_feature_importance.png",
+        "benchmark_leaderboard.png": "benchmark_leaderboard.png",
     }.items():
         source = REPORT_DIR / source_name
         if source.exists():

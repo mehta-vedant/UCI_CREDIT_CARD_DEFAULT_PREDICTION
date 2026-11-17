@@ -41,6 +41,24 @@ def project_showcase():
     return render_template("analysis.html", summary=summary)
 
 
+@app.get("/benchmark")
+def benchmark_showcase():
+    if not SHOWCASE_SUMMARY_PATH.exists():
+        return "Project showcase assets are missing. Run `python -m src.credit_risk.showcase`.", 503
+    summary = json.loads(SHOWCASE_SUMMARY_PATH.read_text(encoding="utf-8"))
+    if not summary.get("benchmark", {}).get("experiment"):
+        return "The full benchmark has not been run yet. Run `python -m src.credit_risk.benchmark`.", 503
+    return render_template("benchmark.html", summary=summary)
+
+
+@app.get("/interview")
+def interview_preparation():
+    if not SHOWCASE_SUMMARY_PATH.exists():
+        return "Project showcase assets are missing. Run `python -m src.credit_risk.showcase`.", 503
+    summary = json.loads(SHOWCASE_SUMMARY_PATH.read_text(encoding="utf-8"))
+    return render_template("interview.html", summary=summary)
+
+
 @app.get("/guide")
 def course_home():
     """Redirect so relative course assets resolve below /guide/."""

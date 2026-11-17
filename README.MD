@@ -40,15 +40,16 @@ python -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements-dev.txt
 python -m src.credit_risk.training --seed 42
+python -m src.credit_risk.benchmark --seed 42 --n-iter 10
 python -m src.credit_risk.explain
 python -m src.credit_risk.showcase
 pytest -q
 python application.py
 ```
 
-The default training run uses a repeatable three-fold search sized for a laptop. For a wider five-fold search, use `python -m src.credit_risk.training --seed 42 --full-search`; expect it to take substantially longer.
+The default training run is the compact, repeatable three-model baseline. The flagship benchmark command screens 13 model families with five-fold CV, tunes the top four, and compares balance strategies inside training folds; expect 1–3 hours on a laptop. For a wider baseline-only search, use `python -m src.credit_risk.training --seed 42 --full-search`.
 
-Open `http://localhost:5000` for the dashboard, `http://localhost:5000/project` for the recruiter-facing ML walkthrough, `http://localhost:5000/predictdata` for the form, `http://localhost:5000/guide` for the complete beginner learning course, or `http://localhost:5000/health` to check the loaded artifact. JSON predictions use `POST /api/predict`.
+Open `http://localhost:5000` for the dashboard, `http://localhost:5000/project` for the recruiter-facing ML walkthrough, `http://localhost:5000/benchmark` for broad experiment results after a benchmark run, `http://localhost:5000/predictdata` for the form, `http://localhost:5000/guide` for the complete beginner learning course, or `http://localhost:5000/health` to check the loaded artifact. JSON predictions use `POST /api/predict`.
 
 For hands-on exploration, open [notebooks/01_eda_and_feature_engineering.ipynb](notebooks/01_eda_and_feature_engineering.ipynb). It uses the same raw CSV and `CreditRiskFeatureEngineer` as the active training and inference pipeline, so it is a reproducible companion rather than a separate notebook experiment.
 

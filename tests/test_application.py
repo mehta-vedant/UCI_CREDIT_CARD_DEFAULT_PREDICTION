@@ -45,6 +45,12 @@ def test_beginner_course_is_served_by_flask():
     assert b"Learn this credit risk project from zero" in page.data
 
 
+def test_interview_preparation_is_served_from_active_metadata():
+    response = app.test_client().get("/interview")
+    assert response.status_code == 200
+    assert b"Explain this project clearly" in response.data
+
+
 def test_api_errors_are_json_and_security_headers_are_set():
     client = app.test_client()
     response = client.get("/api/does-not-exist")

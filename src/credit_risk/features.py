@@ -73,7 +73,7 @@ def build_preprocessor() -> Pipeline:
         ("columns", ColumnTransformer([
             ("numeric", numeric_pipeline, numerical),
             ("categorical", category_pipeline, categorical),
-        ], remainder="drop")),
+        ], remainder="drop", sparse_threshold=0)),
     ])
 
 
