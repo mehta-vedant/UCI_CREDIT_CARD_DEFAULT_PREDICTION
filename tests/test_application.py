@@ -48,7 +48,8 @@ def test_beginner_course_is_served_by_flask():
 def test_interview_preparation_is_served_from_active_metadata():
     response = app.test_client().get("/interview")
     assert response.status_code == 200
-    assert b"Explain this project clearly" in response.data
+    assert b"ALL 13 SCREENED MODELS" in response.data
+    assert b"XGBoost" in response.data
 
 
 def test_prediction_form_accepts_any_whole_credit_limit_and_new_prediction_uses_get():
